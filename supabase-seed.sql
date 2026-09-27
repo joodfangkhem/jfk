@@ -934,3 +934,40 @@ join conditions c on c.slug = v.cslug
 join points p on p.code = v.pcode
 on conflict (condition_id, point_id) do update set
   role = excluded.role, note_th = excluded.note_th, sort_order = excluded.sort_order;
+
+-- ---------- จับคู่เพิ่มเติม: จุดเสริมที่ยังไม่ได้ผูกกับอาการใด ----------
+insert into condition_points (condition_id, point_id, role, note_th, sort_order)
+select c.id, p.id, 'secondary', nullif(v.note,''), v.ord
+from (values
+  ('ivdd','BL-60','',9),
+  ('neck-pain','GB-21','',8),
+  ('epilepsy','BL-18','จุดหลังของตับ',9),
+  ('epilepsy','LIV-2','ระบายไฟตับในรายชักบ่อย',10),
+  ('epilepsy','DA-FENG-MEN','',11),
+  ('osteoarthritis','LI-10','รายที่ปวดขาหน้า',9),
+  ('osteoarthritis','LI-16','รายที่ปวดไหล่',10),
+  ('osteoarthritis','SI-9','รายที่ปวดไหล่',11),
+  ('osteoarthritis','TH-14','รายที่ปวดไหล่',12),
+  ('osteoarthritis','SP-21','รายที่ปวดทั่วตัว',13),
+  ('ckd','KI-6','',7),
+  ('ckd','KI-7','รายบวมน้ำ ปัสสาวะน้อย',8),
+  ('ckd','BL-22','',9),
+  ('geriatric','KI-7','',8),
+  ('anorexia','BL-19','รายอาเจียนน้ำดี เบื่ออาหาร',7),
+  ('diarrhea','BL-27','',8),
+  ('vomiting','ST-44','รายกระเพาะร้อน กลิ่นปากแรง',7),
+  ('cough','LU-9','',8),
+  ('cough','BL-14','',9),
+  ('flutd','LIV-8','',7),
+  ('otitis','TH-1','',7),
+  ('anxiety','HT-3','',8),
+  ('emergency','LU-11','จุด Ting ปล่อยเลือด',8),
+  ('emergency','LI-1','จุด Ting ปล่อยเลือด',9),
+  ('emergency','HT-9','จุด Ting ปล่อยเลือด',10),
+  ('emergency','SI-1','จุด Ting ปล่อยเลือด',11),
+  ('emergency','ST-45','จุด Ting ปล่อยเลือด',12),
+  ('emergency','GB-44','จุด Ting ปล่อยเลือด',13)
+) as v(cslug, pcode, note, ord)
+join conditions c on c.slug = v.cslug
+join points p on p.code = v.pcode
+on conflict (condition_id, point_id) do nothing;
