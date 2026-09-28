@@ -54,17 +54,30 @@ create table if not exists points (
   updated_at    timestamptz not null default now()
 );
 
--- คอลัมน์รวมข้อความสำหรับค้นหา (generated)
-alter table points drop column if exists search_text;
-alter table points add column search_text text
-  generated always as (
-    coalesce(code,'') || ' ' || replace(coalesce(code,''),'-','') || ' ' ||
-    coalesce(name_th,'') || ' ' || coalesce(name_en,'') || ' ' ||
-    coalesce(name_pinyin,'') || ' ' || coalesce(name_zh,'') || ' ' ||
-    coalesce(location_th,'') || ' ' || coalesce(functions_th,'') || ' ' ||
-    coalesce(array_to_string(indications,' '),'') || ' ' ||
-    coalesce(array_to_string(point_types,' '),'')
-  ) stored;
+-- คอลัมน์รวมข้อความสำหรับค้นหา
+-- ใช้ generated column ไม่ได้ เพราะ array_to_string() เป็น stable ไม่ใช่ immutable
+-- (Postgres จะฟ้อง 42P17: generation expression is not immutable) จึงเติมค่าด้วย trigger แทน
+alter table points add column if not exists search_text text;
+
+create or replace function points_fill_search_text() returns trigger
+language plpgsql as $$
+begin
+  new.search_text :=
+    coalesce(new.code,'') || ' ' || replace(coalesce(new.code,''),'-','') || ' ' ||
+    coalesce(new.name_th,'') || ' ' || coalesce(new.name_en,'') || ' ' ||
+    coalesce(new.name_pinyin,'') || ' ' || coalesce(new.name_zh,'') || ' ' ||
+    coalesce(new.location_th,'') || ' ' || coalesce(new.functions_th,'') || ' ' ||
+    coalesce(array_to_string(new.indications,' '),'') || ' ' ||
+    coalesce(array_to_string(new.point_types,' '),'');
+  return new;
+end $$;
+
+drop trigger if exists points_search_text on points;
+create trigger points_search_text before insert or update on points
+  for each row execute function points_fill_search_text();
+
+-- เติมค่าให้แถวที่มีอยู่แล้ว (ถ้ารันสคริปต์นี้ซ้ำหลังมีข้อมูลแล้ว)
+update points set code = code where search_text is null;
 
 create index if not exists points_search_trgm on points using gin (search_text gin_trgm_ops);
 create index if not exists points_meridian_idx on points (meridian_code, number);
