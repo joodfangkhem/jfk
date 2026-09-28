@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getAllPoints, getConditions, getMeridians } from '@/lib/queries'
-
-const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://jfk-vet.vercel.app'
+import { siteUrl as base } from '@/lib/site'
 
 export const revalidate = 3600
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Script from 'next/script'
 import { IBM_Plex_Sans_Thai } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
+import { siteUrl } from '@/lib/site'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import './globals.css'
@@ -12,7 +13,6 @@ const plex = IBM_Plex_Sans_Thai({
   display: 'swap',
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jfk-vet.vercel.app'
 const adsClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
 
 export const metadata: Metadata = {
