@@ -123,7 +123,6 @@ export default async function SubmissionsPage() {
                 <input type="hidden" name="image_url" value={r.image_url} />
                 <input type="hidden" name="credit" value={r.credit ?? ''} />
                 <input type="hidden" name="storage_path" value={r.storage_path ?? ''} />
-                <input type="hidden" name="user_email" value={r.user_email ?? ''} />
                 <input
                   name="caption"
                   defaultValue={r.caption ?? ''}

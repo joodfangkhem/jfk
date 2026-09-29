@@ -11,7 +11,6 @@ export async function approveSubmission(formData: FormData) {
   const storagePath = String(formData.get('storage_path') ?? '')
   const credit = String(formData.get('credit') ?? '').trim()
   const caption = String(formData.get('caption') ?? '').trim()
-  const email = String(formData.get('user_email') ?? '').trim()
   if (!id || !pointId || !imageUrl) return
 
   const supabase = await createClient()
@@ -35,7 +34,6 @@ export async function approveSubmission(formData: FormData) {
       storage_path: storagePath || null,
       caption: caption || null,
       credit: credit || null,
-      submitted_email: email || null,
       sort_order: existing,
     })
     .select('id')

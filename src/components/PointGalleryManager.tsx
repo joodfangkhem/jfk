@@ -13,7 +13,6 @@ type Img = {
   caption: string | null
   credit: string | null
   is_primary: boolean
-  submitted_email: string | null
 }
 
 const MAX = 6
@@ -33,7 +32,7 @@ export default function PointGalleryManager({
   const fetchImages = async () => {
     const { data } = await supabase
       .from('point_images')
-      .select('id, image_url, storage_path, caption, credit, is_primary, submitted_email')
+      .select('id, image_url, storage_path, caption, credit, is_primary')
       .eq('point_id', pointId)
       .order('is_primary', { ascending: false })
       .order('sort_order')
@@ -219,9 +218,6 @@ function ImageRow({
             >
               <Star size={11} /> ตั้งเป็นรูปหลัก
             </button>
-          )}
-          {img.submitted_email && (
-            <span className="chip truncate max-w-40">จาก {img.submitted_email}</span>
           )}
         </div>
 

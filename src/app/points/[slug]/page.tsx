@@ -75,7 +75,10 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
     <main className="mx-auto max-w-3xl px-4 py-6 space-y-5">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          // escape < เพื่อกันข้อความอย่าง </script> ในข้อมูลจุดหลุดออกจาก tag
+          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+        }}
       />
 
       {/* breadcrumb */}
