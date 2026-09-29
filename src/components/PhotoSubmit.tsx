@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Camera, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { resizeImage, formatBytes } from '@/lib/resizeImage'
 import { createClient } from '@/lib/supabase/client'
 
 type Submission = {
@@ -19,11 +20,13 @@ export default function PhotoSubmit({
   code,
   slug,
   hasImage,
+  imageCount = 0,
 }: {
   pointId: string
   code: string
   slug: string
   hasImage: boolean
+  imageCount?: number
 }) {
   const [supabase] = useState(() => createClient())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
@@ -61,21 +64,23 @@ export default function PhotoSubmit({
 
   const submit = async () => {
     if (!file) return toast.error('เลือกรูปก่อนครับ')
-    if (file.size > 8 * 1024 * 1024) return toast.error('ไฟล์ใหญ่เกิน 8 MB')
+    if (file.size > 25 * 1024 * 1024) return toast.error('ไฟล์ใหญ่เกิน 25 MB')
 
     setBusy(true)
+    // ย่อรูปในเครื่องก่อน จะได้อัปโหลดเร็วและไม่กินพื้นที่
+    const small = await resizeImage(file)
     const { data: u } = await supabase.auth.getUser()
     if (!u.user) {
       setBusy(false)
       return
     }
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const ext = small.name.split('.').pop()?.toLowerCase() || 'jpg'
     const path = `submissions/${u.user.id}/${slug}-${Date.now()}.${ext}`
 
     const { error: upErr } = await supabase.storage
       .from('point-images')
-      .upload(path, file, { cacheControl: '31536000', upsert: false })
+      .upload(path, small, { cacheControl: '31536000', upsert: false })
     if (upErr) {
       toast.error('อัปโหลดไม่สำเร็จ: ' + upErr.message)
       setBusy(false)
@@ -125,7 +130,7 @@ export default function PhotoSubmit({
     <section className="card p-4">
       <h2 className="font-semibold flex items-center gap-2 mb-2">
         <Camera size={17} className="text-primary" />
-        {hasImage ? 'มีรูปที่ดีกว่านี้ไหม' : 'ช่วยส่งรูปจุดนี้'}
+        {hasImage ? 'ส่งรูปมุมอื่นของจุดนี้' : 'ช่วยส่งรูปจุดนี้'}
       </h2>
 
       {signedIn === false ? (
@@ -165,13 +170,16 @@ export default function PhotoSubmit({
             </p>
           )}
           <p className="text-sm text-muted leading-relaxed">
+            {hasImage
+              ? `จุดนี้มีรูปแล้ว ${imageCount} รูป (เก็บได้สูงสุด 6) — ส่งมุมอื่นหรือสายพันธุ์อื่นมาเพิ่มได้ เช่น หมาขาสั้น/ขายาว ตัวใหญ่/ตัวเล็ก `
+              : ''}
             ถ่ายให้เห็น landmark ชัดเจน เช่น ปุ่มกระดูกหรือร่องกล้ามเนื้อที่ใช้อ้างอิงตำแหน่ง
             {code === 'BAI-HUI' ? ' (เช่น แอ่งเอว-กระเบนเหน็บ)' : ''}
           </p>
 
           <label className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-border bg-surface-2 text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition">
             <Camera size={16} />
-            {file ? file.name.slice(0, 24) : 'เลือกรูป'}
+            {file ? `${file.name.slice(0, 20)} (${formatBytes(file.size)})` : 'เลือกรูป'}
             <input
               type="file"
               accept="image/*"
@@ -204,6 +212,7 @@ export default function PhotoSubmit({
           </button>
 
           <p className="text-xs text-muted leading-relaxed">
+            ระบบจะย่อรูปให้อัตโนมัติก่อนส่ง ไม่ต้องย่อเองมา ·
             ส่งรูปที่คุณถ่ายเองเท่านั้น อย่าเอารูปจากตำราหรืออินเทอร์เน็ตมาส่ง
             เมื่อรูปถูกอนุมัติ ถือว่าคุณอนุญาตให้เว็บนี้ใช้รูปได้
           </p>

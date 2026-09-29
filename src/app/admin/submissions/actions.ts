@@ -3,13 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
-/** อนุมัติ: เอารูปไปใส่ให้จุดนั้นเลย แล้วมาร์คว่าผ่าน */
+/** อนุมัติ: เพิ่มรูปเข้าแกลเลอรีของจุดนั้น (รูปแรกจะถูกตั้งเป็นรูปหลักให้เลย) */
 export async function approveSubmission(formData: FormData) {
   const id = String(formData.get('id') ?? '')
   const pointId = String(formData.get('point_id') ?? '')
   const imageUrl = String(formData.get('image_url') ?? '')
+  const storagePath = String(formData.get('storage_path') ?? '')
   const credit = String(formData.get('credit') ?? '').trim()
   const caption = String(formData.get('caption') ?? '').trim()
+  const email = String(formData.get('user_email') ?? '').trim()
   if (!id || !pointId || !imageUrl) return
 
   const supabase = await createClient()
@@ -18,15 +20,33 @@ export async function approveSubmission(formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) return
 
-  const { error: pointErr } = await supabase
-    .from('points')
-    .update({
+  const { count } = await supabase
+    .from('point_images')
+    .select('*', { count: 'exact', head: true })
+    .eq('point_id', pointId)
+
+  const existing = count ?? 0
+
+  const { data: row, error } = await supabase
+    .from('point_images')
+    .insert({
+      point_id: pointId,
       image_url: imageUrl,
-      image_credit: credit || null,
-      image_alt: caption || null,
+      storage_path: storagePath || null,
+      caption: caption || null,
+      credit: credit || null,
+      submitted_email: email || null,
+      sort_order: existing,
     })
-    .eq('id', pointId)
-  if (pointErr) return
+    .select('id')
+    .single()
+
+  // เต็ม 6 รูปแล้ว หรือ insert ไม่ผ่าน -> ปล่อยให้ค้างรออนุมัติไว้เหมือนเดิม
+  if (error || !row) return
+
+  if (existing === 0) {
+    await supabase.rpc('set_primary_point_image', { img_id: row.id })
+  }
 
   await supabase
     .from('point_image_submissions')

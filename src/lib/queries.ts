@@ -105,6 +105,18 @@ function rank(p: Point, key: string) {
   return 3
 }
 
+export async function getPointImages(pointId: string) {
+  if (!hasSupabase) return []
+  const { data } = await supabasePublic
+    .from('point_images')
+    .select('id, image_url, caption, credit, is_primary')
+    .eq('point_id', pointId)
+    .order('is_primary', { ascending: false })
+    .order('sort_order')
+    .order('created_at')
+  return data ?? []
+}
+
 export async function getConditions(): Promise<Condition[]> {
   if (!hasSupabase) return []
   const { data } = await supabasePublic

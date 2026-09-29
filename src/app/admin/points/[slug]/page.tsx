@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import PointEditor from '@/components/PointEditor'
+import PointGalleryManager from '@/components/PointGalleryManager'
 import type { Point } from '@/lib/types'
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default async function AdminPointPage({ params }: { params: Promise<{ slu
       <h1 className="text-xl font-bold">
         แก้ <span className="text-primary">{point.code}</span> {point.name_th}
       </h1>
+      <PointGalleryManager pointId={point.id} slug={point.slug} />
       <PointEditor point={point as Point} />
     </main>
   )

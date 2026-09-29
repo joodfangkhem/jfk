@@ -8,12 +8,13 @@ import FavoriteButton from '@/components/FavoriteButton'
 import NoteBox from '@/components/NoteBox'
 import PointCard from '@/components/PointCard'
 import PhotoSubmit from '@/components/PhotoSubmit'
-import PointImage from '@/components/PointImage'
+import PointGallery from '@/components/PointGallery'
 import {
   getAllPoints,
   getMeridians,
   getPoint,
   getPointConditions,
+  getPointImages,
   getRelatedPoints,
 } from '@/lib/queries'
 import { SPECIES_LABEL } from '@/lib/types'
@@ -52,10 +53,11 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
   const point = await getPoint(slug)
   if (!point) notFound()
 
-  const [meridians, conditions, related] = await Promise.all([
+  const [meridians, conditions, related, images] = await Promise.all([
     getMeridians(),
     getPointConditions(point.id),
     getRelatedPoints(point.id),
+    getPointImages(point.id),
   ])
   const meridian = meridians.find((m) => m.code === point.meridian_code)
 
@@ -128,7 +130,7 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
         </div>
       </header>
 
-      <PointImage point={point} />
+      <PointGallery images={images} code={point.code} nameTh={point.name_th} />
 
       {/* ตำแหน่ง */}
       <section className="card p-4">
@@ -190,7 +192,8 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
         pointId={point.id}
         code={point.code}
         slug={point.slug}
-        hasImage={!!point.image_url}
+        hasImage={images.length > 0}
+        imageCount={images.length}
       />
 
       <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_POINT} />

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import type { Point } from '@/lib/types'
@@ -19,34 +19,11 @@ export default function PointEditor({ point }: { point: Point }) {
     indications: point.indications.join(', '),
     needle_th: point.needle_th ?? '',
     caution_th: point.caution_th ?? '',
-    image_url: point.image_url ?? '',
-    image_alt: point.image_alt ?? '',
-    image_credit: point.image_credit ?? '',
   })
   const [busy, setBusy] = useState(false)
-  const [uploading, setUploading] = useState(false)
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
-
-  const upload = async (file: File) => {
-    setUploading(true)
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const path = `${point.slug}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('point-images').upload(path, file, {
-      cacheControl: '31536000',
-      upsert: true,
-    })
-    if (error) {
-      toast.error('อัปโหลดไม่สำเร็จ: ' + error.message)
-      setUploading(false)
-      return
-    }
-    const { data } = supabase.storage.from('point-images').getPublicUrl(path)
-    setForm((f) => ({ ...f, image_url: data.publicUrl }))
-    toast.success('อัปโหลดรูปแล้ว กด "บันทึก" เพื่อยืนยัน')
-    setUploading(false)
-  }
 
   const save = async () => {
     setBusy(true)
@@ -63,9 +40,6 @@ export default function PointEditor({ point }: { point: Point }) {
           .filter(Boolean),
         needle_th: form.needle_th || null,
         caution_th: form.caution_th || null,
-        image_url: form.image_url || null,
-        image_alt: form.image_alt || null,
-        image_credit: form.image_credit || null,
       })
       .eq('id', point.id)
     setBusy(false)
@@ -78,30 +52,6 @@ export default function PointEditor({ point }: { point: Point }) {
 
   return (
     <div className="space-y-4">
-      <section className="card p-4 space-y-3">
-        <h2 className="font-semibold">รูปตำแหน่งจุด</h2>
-        {form.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={form.image_url} alt="" className="w-full max-w-sm rounded-xl border border-border" />
-        )}
-        <label className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-border bg-surface-2 text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition">
-          <ImagePlus size={16} />
-          {uploading ? 'กำลังอัปโหลด…' : form.image_url ? 'เปลี่ยนรูป' : 'อัปโหลดรูป'}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            disabled={uploading}
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) upload(f)
-            }}
-          />
-        </label>
-        <Field label="คำบรรยายรูป (alt)" value={form.image_alt} onChange={set('image_alt')} />
-        <Field label="เครดิตรูป" value={form.image_credit} onChange={set('image_credit')} />
-      </section>
-
       <section className="card p-4 space-y-3">
         <Field label="ชื่อไทย" value={form.name_th} onChange={set('name_th')} />
         <Area label="ตำแหน่ง" value={form.location_th} onChange={set('location_th')} rows={3} />

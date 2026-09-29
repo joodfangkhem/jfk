@@ -96,8 +96,8 @@ export default async function SubmissionsPage() {
                     {r.points?.code} {r.points?.name_th}
                   </Link>
                   {r.points?.image_url && (
-                    <p className="text-xs text-warn mt-0.5">
-                      จุดนี้มีรูปอยู่แล้ว — อนุมัติแล้วรูปเดิมจะถูกแทนที่
+                    <p className="text-xs text-muted mt-0.5">
+                      จุดนี้มีรูปอยู่แล้ว — รูปใหม่จะถูกเพิ่มต่อท้าย (ไม่ทับของเดิม)
                     </p>
                   )}
                   <p className="text-xs text-muted mt-1">
@@ -122,17 +122,19 @@ export default async function SubmissionsPage() {
                 <input type="hidden" name="point_id" value={r.point_id} />
                 <input type="hidden" name="image_url" value={r.image_url} />
                 <input type="hidden" name="credit" value={r.credit ?? ''} />
+                <input type="hidden" name="storage_path" value={r.storage_path ?? ''} />
+                <input type="hidden" name="user_email" value={r.user_email ?? ''} />
                 <input
                   name="caption"
                   defaultValue={r.caption ?? ''}
-                  placeholder="คำบรรยายรูป (alt) — ใส่ก็ได้ ไม่ใส่ก็ได้"
+                  placeholder="คำบรรยาย เช่น มุมด้านข้าง / พุดเดิ้ลขาสั้น"
                   className="w-full h-10 px-3 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
                 />
                 <button
                   type="submit"
                   className="h-10 px-4 inline-flex items-center gap-1.5 rounded-full bg-primary text-white text-sm font-medium active:scale-95 transition"
                 >
-                  <Check size={15} /> อนุมัติและใส่ในจุดนี้
+                  <Check size={15} /> อนุมัติ เพิ่มเข้าแกลเลอรี
                 </button>
               </form>
 
