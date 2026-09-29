@@ -6,6 +6,7 @@ import { CATEGORY_LABEL } from '@/lib/types'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/conditions' },
   title: 'เลือกจุดตามอาการ',
   description:
     'จุดฝังเข็มที่ใช้บ่อยตามอาการในสุนัขและแมว เช่น หมอนรองกระดูกเคลื่อน ขาหลังอ่อนแรง ข้อเสื่อม อาเจียน ท้องเสีย ชัก ผิวหนังคัน',

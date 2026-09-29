@@ -6,6 +6,7 @@ import { ELEMENT_LABEL } from '@/lib/types'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/meridians' },
   title: 'เส้นลมปราณทั้ง 14 เส้น',
   description:
     'รายชื่อเส้นลมปราณที่ใช้ในการฝังเข็มสัตว์ พร้อมธาตุ ยิน-หยาง ช่วงเวลาที่เส้นทำงานเด่น และจุดบนเส้นแต่ละเส้น',

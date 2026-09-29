@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { ArrowRight, Info } from 'lucide-react'
@@ -8,6 +9,10 @@ import { getCommonPoints, getConditions, getMeridians } from '@/lib/queries'
 import { CATEGORY_LABEL, ELEMENT_LABEL } from '@/lib/types'
 
 export const revalidate = 3600
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
 
 export default async function HomePage() {
   const [common, meridians, conditions] = await Promise.all([

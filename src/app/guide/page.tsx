@@ -4,6 +4,7 @@ import { AlertTriangle } from 'lucide-react'
 import AdSlot from '@/components/AdSlot'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/guide' },
   title: 'คู่มือใช้งาน — cun, ชนิดของจุด, ขนาดเข็ม',
   description:
     'วิธีวัดระยะ cun ในสัตว์ ความหมายของชนิดจุด (Yuan-source, He-sea, Back-shu, Front-mu, Ting point), ขนาดเข็มที่ใช้ในสุนัขและแมว และข้อห้ามในการฝังเข็ม',

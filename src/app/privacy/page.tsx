@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/privacy' },
   title: 'นโยบายความเป็นส่วนตัว',
   description: 'ข้อมูลที่ JFK จุดฝังเข็ม เก็บ วิธีใช้ คุกกี้ และโฆษณา',
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/about' },
   title: 'เกี่ยวกับ JFK จุดฝังเข็ม',
   description:
     'JFK (Jood Fang Khem) คู่มืออ้างอิงจุดฝังเข็มในสัตว์ภาษาไทย รวบรวมจุดที่ใช้บ่อยในสุนัขและแมว สำหรับสัตวแพทย์และผู้เรียน TCVM',

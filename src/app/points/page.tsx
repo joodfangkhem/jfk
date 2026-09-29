@@ -8,6 +8,7 @@ import { getMeridians, searchPoints } from '@/lib/queries'
 import { SPECIES_LABEL } from '@/lib/types'
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/points' },
   title: 'ค้นหาจุดฝังเข็ม',
   description:
     'ค้นหาจุดฝังเข็มในสัตว์จากรหัสจุด ชื่อจีน ชื่อไทย ตำแหน่ง หรืออาการ กรองตามชนิดสัตว์และเส้นลมปราณได้',
