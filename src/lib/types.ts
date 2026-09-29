@@ -33,6 +33,7 @@ export type Point = {
   caution_th: string | null
   species: string[]
   is_common: boolean
+  verified: boolean
   popularity: number
   image_url: string | null
   image_alt: string | null

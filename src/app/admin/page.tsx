@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; noimage?: string }>
+  searchParams: Promise<{ q?: string; noimage?: string; unverified?: string }>
 }) {
-  const { q, noimage } = await searchParams
+  const { q, noimage, unverified } = await searchParams
   const supabase = await createClient()
 
   const {
@@ -45,11 +45,12 @@ on conflict (user_id) do nothing;`}
 
   let query = supabase
     .from('points')
-    .select('id, code, slug, name_th, image_url')
+    .select('id, code, slug, name_th, image_url, verified')
     .order('popularity', { ascending: false })
     .limit(200)
   if (q) query = query.ilike('search_text', `%${q}%`)
   if (noimage) query = query.is('image_url', null)
+  if (unverified) query = query.eq('verified', false)
   const { data: points } = await query
 
   const withImage = (points ?? []).filter((p) => p.image_url).length
@@ -90,6 +91,16 @@ on conflict (user_id) do nothing;`}
         >
           ยังไม่มีรูป
         </Link>
+        <Link
+          href={q ? `/admin?q=${encodeURIComponent(q)}&unverified=1` : '/admin?unverified=1'}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+            unverified
+              ? 'bg-warn text-white border-warn'
+              : 'bg-surface text-muted border-border hover:text-warn'
+          }`}
+        >
+          รอตรวจสอบ
+        </Link>
       </div>
 
       <Link
@@ -129,6 +140,7 @@ on conflict (user_id) do nothing;`}
               {p.code}
             </span>
             <span className="flex-1 text-sm truncate">{p.name_th}</span>
+            {!p.verified && <span className="chip text-warn border-warn/30">รอตรวจ</span>}
             <span className={`chip ${p.image_url ? 'text-primary border-primary/30' : ''}`}>
               {p.image_url ? 'มีรูป' : 'ยังไม่มีรูป'}
             </span>

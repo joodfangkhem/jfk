@@ -2,7 +2,7 @@ import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
 import type { Condition, ConditionPoint, Meridian, Point } from '@/lib/types'
 
 const POINT_FIELDS =
-  'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, anatomy_th, functions_th, indications, point_types, needle_th, caution_th, species, is_common, popularity, image_url, image_alt, image_credit'
+  'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, anatomy_th, functions_th, indications, point_types, needle_th, caution_th, species, is_common, verified, popularity, image_url, image_alt, image_credit'
 
 export async function getMeridians(): Promise<Meridian[]> {
   if (!hasSupabase) return []

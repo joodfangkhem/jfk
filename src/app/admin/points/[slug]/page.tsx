@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import PointEditor from '@/components/PointEditor'
 import PointGalleryManager from '@/components/PointGalleryManager'
+import VerifyToggle from '@/components/VerifyToggle'
 import type { Point } from '@/lib/types'
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default async function AdminPointPage({ params }: { params: Promise<{ slu
       <h1 className="text-xl font-bold">
         แก้ <span className="text-primary">{point.code}</span> {point.name_th}
       </h1>
+      <VerifyToggle pointId={point.id} verified={point.verified} />
       <PointGalleryManager pointId={point.id} slug={point.slug} />
       <PointEditor point={point as Point} />
     </main>

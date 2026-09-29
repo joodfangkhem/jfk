@@ -119,6 +119,9 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
             </Link>
           )}
           {point.is_common && <span className="chip bg-accent-soft text-accent border-accent/20">ใช้บ่อย</span>}
+          {!point.verified && (
+            <span className="chip bg-warn-soft text-warn border-warn/25">รอตรวจสอบ</span>
+          )}
           {point.point_types.map((t) => (
             <span key={t} className="chip">{t}</span>
           ))}
@@ -136,6 +139,16 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
       <PointGallery images={images} code={point.code} nameTh={point.name_th} />
 
       {/* ตำแหน่ง */}
+      {!point.verified && (
+        <section className="card p-4 bg-warn-soft border-warn/25">
+          <p className="text-sm leading-relaxed text-text/85">
+            <strong className="text-warn">ข้อมูลจุดนี้ยังรอตรวจสอบ</strong> — เป็นจุดที่ไม่ค่อยใช้ในสัตว์
+            ตำแหน่ง transpositional จึงไม่ได้มาตรฐานเท่าจุดที่ใช้บ่อย
+            กรุณาเทียบกับตำราอ้างอิงก่อนใช้งานจริงทุกครั้ง
+          </p>
+        </section>
+      )}
+
       <section className="card p-4">
         <h2 className="font-semibold flex items-center gap-2 mb-2">
           <MapPin size={17} className="text-primary" /> ตำแหน่ง
