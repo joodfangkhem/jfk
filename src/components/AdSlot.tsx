@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 /**
- * ช่องโฆษณา AdSense — จะแสดงเมื่อใส่ env NEXT_PUBLIC_ADSENSE_CLIENT แล้วเท่านั้น
- * ระหว่างรอ AdSense อนุมัติ ช่องนี้จะไม่ render อะไรเลย
+ * ช่องโฆษณา AdSense — แสดงเมื่อใส่ env NEXT_PUBLIC_ADSENSE_CLIENT และมี slot แล้วเท่านั้น
+ * ถ้า Google ไม่มีโฆษณามาลง (ยังไม่อนุมัติ หรือไม่มีโฆษณาที่ตรงกลุ่ม) จะยุบช่องทิ้ง
+ * ไม่ทิ้งพื้นที่ว่างโบ๋ไว้กลางหน้า
  */
 export default function AdSlot({
   slot,
@@ -18,17 +19,41 @@ export default function AdSlot({
   const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
   const ref = useRef<HTMLModElement>(null)
   const pushed = useRef(false)
+  const [empty, setEmpty] = useState(false)
 
   useEffect(() => {
-    if (!client || pushed.current) return
-    pushed.current = true
-    try {
-      // @ts-expect-error ตัวแปรที่สคริปต์ AdSense ฉีดเข้ามา
-      ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-    } catch {}
-  }, [client])
+    if (!client || !slot) return
+    const el = ref.current
+    if (!el) return
 
-  if (!client || !slot) return null
+    if (!pushed.current) {
+      pushed.current = true
+      try {
+        // @ts-expect-error ตัวแปรที่สคริปต์ AdSense ฉีดเข้ามา
+        ;(window.adsbygoogle = window.adsbygoogle || []).push({})
+      } catch {}
+    }
+
+    // AdSense ติด data-ad-status="unfilled" เมื่อไม่มีโฆษณามาลง
+    const check = () => {
+      if (el.getAttribute('data-ad-status') === 'unfilled') setEmpty(true)
+    }
+    check()
+    const obs = new MutationObserver(check)
+    obs.observe(el, { attributes: true, attributeFilter: ['data-ad-status'] })
+
+    // เผื่อสคริปต์ไม่ตอบอะไรเลย (เช่นเว็บยังรออนุมัติ หรือโดน ad blocker)
+    const t = setTimeout(() => {
+      if (!el.offsetHeight) setEmpty(true)
+    }, 4000)
+
+    return () => {
+      obs.disconnect()
+      clearTimeout(t)
+    }
+  }, [client, slot])
+
+  if (!client || !slot || empty) return null
 
   return (
     <div className={`my-6 ${className}`}>

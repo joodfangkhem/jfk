@@ -77,3 +77,8 @@ body {
 
 .prose-th p { margin-bottom: 0.75rem; line-height: 1.85; }
 .prose-th strong { color: var(--text); }
+
+/* กันช่องโฆษณาที่ไม่มีโฆษณามาลง ไม่ให้กินพื้นที่กลางหน้า */
+ins.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
