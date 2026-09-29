@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import AdminNavLink from './AdminNavLink'
 import AuthButton from './AuthButton'
 
 const NAV = [
@@ -32,6 +33,7 @@ export default function SiteHeader() {
               {n.label}
             </Link>
           ))}
+          <AdminNavLink />
         </nav>
       </div>
     </header>

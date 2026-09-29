@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { AlertTriangle, MapPin, Sparkles, Syringe } from 'lucide-react'
 import AdSlot from '@/components/AdSlot'
+import AdminEditButton from '@/components/AdminEditButton'
 import FavoriteButton from '@/components/FavoriteButton'
 import NoteBox from '@/components/NoteBox'
 import PointCard from '@/components/PointCard'
@@ -120,7 +121,10 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
           ))}
         </div>
 
-        <FavoriteButton pointId={point.id} code={point.code} />
+        <div className="flex flex-wrap gap-2">
+          <FavoriteButton pointId={point.id} code={point.code} />
+          <AdminEditButton slug={point.slug} />
+        </div>
       </header>
 
       <PointImage point={point} />

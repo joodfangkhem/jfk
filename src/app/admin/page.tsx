@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; noimage?: string }>
 }) {
-  const { q } = await searchParams
+  const { q, noimage } = await searchParams
   const supabase = await createClient()
 
   const {
@@ -49,6 +49,7 @@ on conflict (user_id) do nothing;`}
     .order('popularity', { ascending: false })
     .limit(200)
   if (q) query = query.ilike('search_text', `%${q}%`)
+  if (noimage) query = query.is('image_url', null)
   const { data: points } = await query
 
   const withImage = (points ?? []).filter((p) => p.image_url).length
@@ -64,6 +65,29 @@ on conflict (user_id) do nothing;`}
         </p>
       </header>
 
+      <div className="flex gap-1.5">
+        <Link
+          href={q ? `/admin?q=${encodeURIComponent(q)}` : '/admin'}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+            !noimage
+              ? 'bg-primary text-white border-primary'
+              : 'bg-surface text-muted border-border hover:text-primary'
+          }`}
+        >
+          ทั้งหมด
+        </Link>
+        <Link
+          href={q ? `/admin?q=${encodeURIComponent(q)}&noimage=1` : '/admin?noimage=1'}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+            noimage
+              ? 'bg-primary text-white border-primary'
+              : 'bg-surface text-muted border-border hover:text-primary'
+          }`}
+        >
+          ยังไม่มีรูป
+        </Link>
+      </div>
+
       <form className="flex gap-2">
         <input
           name="q"
@@ -71,6 +95,7 @@ on conflict (user_id) do nothing;`}
           placeholder="ค้นหาจุดที่จะแก้"
           className="flex-1 h-11 px-3.5 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
         />
+        {noimage && <input type="hidden" name="noimage" value="1" />}
         <button className="h-11 px-4 rounded-full bg-primary text-white text-sm font-medium">ค้นหา</button>
       </form>
 
