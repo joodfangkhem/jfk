@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# เก็บไฟล์ตัวอย่าง env ไว้ใน repo (ไม่มีความลับ)
+!.env.local.example
