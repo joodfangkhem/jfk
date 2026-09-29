@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -42,6 +43,15 @@ function LoginInner() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-12 space-y-6 text-center">
+      <Image
+        src="/logo.png"
+        alt="JFK จุดฝังเข็ม"
+        width={900}
+        height={547}
+        priority
+        className="w-full max-w-xs mx-auto h-auto"
+      />
+
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
         <p className="text-sm text-muted leading-relaxed">

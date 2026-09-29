@@ -22,8 +22,20 @@
 - `src/lib/queries.ts` — ทุก query ของหน้า public (มี guard `hasSupabase` ให้ build ผ่านตอนไม่มี env)
 - `src/components/AdSlot.tsx` — ไม่ render อะไรเลยถ้าไม่มี `NEXT_PUBLIC_ADSENSE_CLIENT`
 
-## สถานะ
+## สถานะ (2026-09-29)
 
-- โครงสร้างและเนื้อหาชุดแรกเสร็จแล้ว build/lint/typecheck ผ่าน
-- ยังไม่ได้: สร้าง Supabase project จริง, รัน SQL, เปิด Google OAuth, สร้าง GitHub repo, deploy Vercel, สมัคร AdSense
-- ยังไม่มี: รูปภาพจุด, จุดที่เหลือของแต่ละเส้น (ตอนนี้เอาจุดที่ใช้บ่อยก่อน), species ม้า/วัว (schema รองรับแล้ว)
+- **LIVE: https://joodfangkhem.com** — Vercel auto-deploy จาก `joodfangkhem/jfk` (บัญชี GitHub แยก ไม่ใช่ armmani)
+- Supabase `urkjxixuxxubdqymugqo` รัน schema + seed + migration ครบ (100 จุด / 15 เส้น / 22 อาการ)
+- Google OAuth publish แล้ว ล็อกอินใช้งานได้จริง · `joodfangkhem@gmail.com` เป็น admin
+- Search Console verify + ส่ง sitemap แล้ว (Google เจอ 144 หน้า)
+- AdSense `ca-pub-4390416763222463` ติดครบ 5 slot + ads.txt · **รอผลตรวจ**
+- ผู้ใช้ส่งรูปเข้ามาได้ แอดมินอนุมัติที่ `/admin/submissions` · จุดละได้ถึง 6 รูป เลือกรูปหลักได้
+- ยังไม่มี: รูปจุดจริง, จุดที่เหลือ (~260), species ม้า/วัว
+
+## กับดักที่เจอมาแล้ว
+
+- **`next/script` ไม่ใส่ `<script>` ลงใน SSR HTML** (ออกมาเป็น `<link rel=preload>` แล้วแทรกด้วย JS)
+  ทำให้ crawler ของ AdSense ยืนยันเว็บไม่ผ่าน — ต้องใช้ `<script>` ธรรมดาใน `<head>` ของ root layout
+- **generated column ที่เรียก `array_to_string()` รันไม่ผ่าน** (42P17 not immutable) → ใช้ trigger แทน
+- Supabase SQL Editor รันทั้งสคริปต์ใน transaction เดียว error กลางทาง = rollback หมด
+- component ที่เช็ค auth จะ render null ตอน SSR → `curl | grep` หาไม่เจอ ไม่ได้แปลว่า deploy ไม่ขึ้น

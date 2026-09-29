@@ -34,6 +34,11 @@ export const metadata: Metadata = {
     title: 'JFK จุดฝังเข็ม — คู่มือจุดฝังเข็มในสัตว์',
     description:
       'ค้นหาจุดฝังเข็มในสัตว์ด้วยรหัสจุด ชื่อ หรืออาการ พร้อมตำแหน่ง สรรพคุณ และเทคนิคการปัก',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'JFK จุดฝังเข็ม' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/og.png'],
   },
   robots: { index: true, follow: true },
   ...(adsClient ? { other: { 'google-adsense-account': adsClient } } : {}),
@@ -46,7 +51,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* ใช้ <script> ธรรมดาแทน next/script เพราะ next/script ออกมาเป็นแค่ link rel=preload
             ใน HTML ทำให้ crawler ของ AdSense หาโค้ดไม่เจอและยืนยันเว็บไม่ผ่าน */}
         {adsClient && (
-          // eslint-disable-next-line @next/next/no-sync-scripts
           <script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsClient}`}

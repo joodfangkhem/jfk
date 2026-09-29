@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import AdminNavLink from './AdminNavLink'
 import AuthButton from './AuthButton'
@@ -15,7 +16,14 @@ export default function SiteHeader() {
       <div className="mx-auto max-w-5xl px-4">
         <div className="h-14 flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <NeedleMark />
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={30}
+              height={30}
+              priority
+              className="rounded-lg"
+            />
             <span className="font-bold text-[17px] tracking-tight">
               JFK<span className="text-muted font-medium"> จุดฝังเข็ม</span>
             </span>
@@ -40,13 +48,3 @@ export default function SiteHeader() {
   )
 }
 
-function NeedleMark() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden>
-      <circle cx="13" cy="13" r="12" fill="var(--primary-soft)" />
-      <path d="M7 19 L19 7" stroke="var(--primary)" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="19" cy="7" r="2.4" fill="var(--accent)" />
-      <circle cx="10.5" cy="15.5" r="1.3" fill="var(--primary-dark)" />
-    </svg>
-  )
-}
