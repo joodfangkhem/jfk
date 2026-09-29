@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ShieldCheck } from 'lucide-react'
+import { Inbox, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
@@ -53,6 +53,10 @@ on conflict (user_id) do nothing;`}
   const { data: points } = await query
 
   const withImage = (points ?? []).filter((p) => p.image_url).length
+  const { count: pendingCount } = await supabase
+    .from('point_image_submissions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending')
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 space-y-5">
@@ -87,6 +91,21 @@ on conflict (user_id) do nothing;`}
           ยังไม่มีรูป
         </Link>
       </div>
+
+      <Link
+        href="/admin/submissions"
+        className="card p-3.5 flex items-center gap-3 hover:border-primary/50 transition"
+      >
+        <Inbox size={18} className="text-primary shrink-0" />
+        <span className="flex-1 text-sm font-medium">รูปที่ผู้ใช้ส่งเข้ามา</span>
+        {pendingCount ? (
+          <span className="min-w-6 h-6 px-2 inline-flex items-center justify-center rounded-full bg-accent text-white text-xs font-bold">
+            {pendingCount}
+          </span>
+        ) : (
+          <span className="chip">ไม่มีรอตรวจ</span>
+        )}
+      </Link>
 
       <form className="flex gap-2">
         <input

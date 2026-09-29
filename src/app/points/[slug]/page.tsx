@@ -7,6 +7,7 @@ import AdminEditButton from '@/components/AdminEditButton'
 import FavoriteButton from '@/components/FavoriteButton'
 import NoteBox from '@/components/NoteBox'
 import PointCard from '@/components/PointCard'
+import PhotoSubmit from '@/components/PhotoSubmit'
 import PointImage from '@/components/PointImage'
 import {
   getAllPoints,
@@ -184,6 +185,13 @@ export default async function PointPage({ params }: { params: Promise<{ slug: st
       )}
 
       <NoteBox pointId={point.id} code={point.code} />
+
+      <PhotoSubmit
+        pointId={point.id}
+        code={point.code}
+        slug={point.slug}
+        hasImage={!!point.image_url}
+      />
 
       <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_POINT} />
 
