@@ -6,7 +6,9 @@
 -- 1) อีเมลผู้ส่งรูปเคยอ่านได้จาก public (point_images อ่านได้ทุกคน)
 --    ย้ายไปดูที่ point_image_submissions แทน ซึ่งเห็นเฉพาะเจ้าของกับแอดมิน
 alter table point_images drop column if exists submitted_email;
-revoke select (submitted_by) on point_images from anon, authenticated;
+-- หมายเหตุ: revoke ทีละคอลัมน์ไม่มีผลถ้ามี grant ระดับตารางอยู่แล้ว
+-- คอลัมน์นี้ไม่เคยถูกเขียนค่าจากแอปเลย จึงลบทิ้งแทนการพยายามซ่อน
+alter table point_images drop column if exists submitted_by;
 
 -- 2) จำกัดชนิดและขนาดไฟล์ที่อัปโหลดเข้า bucket
 --    กันคนอัปไฟล์ HTML/SVG ที่รันสคริปต์ได้ และกันไฟล์ใหญ่ถล่มโควตา
