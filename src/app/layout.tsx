@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { IBM_Plex_Sans_Thai } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { siteUrl } from '@/lib/site'
@@ -37,18 +36,21 @@ export const metadata: Metadata = {
       'ค้นหาจุดฝังเข็มในสัตว์ด้วยรหัสจุด ชื่อ หรืออาการ พร้อมตำแหน่ง สรรพคุณ และเทคนิคการปัก',
   },
   robots: { index: true, follow: true },
+  ...(adsClient ? { other: { 'google-adsense-account': adsClient } } : {}),
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
       <head>
+        {/* ใช้ <script> ธรรมดาแทน next/script เพราะ next/script ออกมาเป็นแค่ link rel=preload
+            ใน HTML ทำให้ crawler ของ AdSense หาโค้ดไม่เจอและยืนยันเว็บไม่ผ่าน */}
         {adsClient && (
-          <Script
+          // eslint-disable-next-line @next/next/no-sync-scripts
+          <script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsClient}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
           />
         )}
       </head>
