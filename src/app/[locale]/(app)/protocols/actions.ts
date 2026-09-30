@@ -3,18 +3,30 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isLocale, lp, type Locale } from '@/lib/i18n'
+
+function localeOf(formData: FormData): Locale {
+  const raw = String(formData.get('locale') ?? '')
+  return isLocale(raw) ? raw : 'th'
+}
+
+/** path ที่ Next เห็นจริงหลัง proxy rewrite — ไทยก็มี prefix /th */
+function routePath(locale: Locale, path: string) {
+  return `/${locale}${path}`
+}
 
 export async function createProtocol(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
   if (!name) return
   const species = String(formData.get('species') ?? '') || null
   const note = String(formData.get('note') ?? '').trim() || null
+  const locale = localeOf(formData)
 
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/protocols')
+  if (!user) redirect(`${lp(locale, '/login')}?next=${encodeURIComponent(lp(locale, '/protocols'))}`)
 
   const { data } = await supabase
     .from('protocols')
@@ -22,23 +34,25 @@ export async function createProtocol(formData: FormData) {
     .select('id')
     .single()
 
-  revalidatePath('/protocols')
-  if (data) redirect(`/protocols/${data.id}`)
+  revalidatePath(routePath(locale, '/protocols'))
+  if (data) redirect(lp(locale, `/protocols/${data.id}`))
 }
 
 export async function deleteProtocol(formData: FormData) {
   const id = String(formData.get('id') ?? '')
   if (!id) return
+  const locale = localeOf(formData)
   const supabase = await createClient()
   await supabase.from('protocols').delete().eq('id', id)
-  revalidatePath('/protocols')
-  redirect('/protocols')
+  revalidatePath(routePath(locale, '/protocols'))
+  redirect(lp(locale, '/protocols'))
 }
 
 export async function addPointToProtocol(formData: FormData) {
   const protocolId = String(formData.get('protocol_id') ?? '')
   const codeRaw = String(formData.get('code') ?? '').trim()
   if (!protocolId || !codeRaw) return
+  const locale = localeOf(formData)
 
   const supabase = await createClient()
   const code = codeRaw.toUpperCase().replace(/\s+/g, '-')
@@ -63,13 +77,14 @@ export async function addPointToProtocol(formData: FormData) {
       )
   }
 
-  revalidatePath(`/protocols/${protocolId}`)
+  revalidatePath(routePath(locale, `/protocols/${protocolId}`))
 }
 
 export async function removePointFromProtocol(formData: FormData) {
   const protocolId = String(formData.get('protocol_id') ?? '')
   const pointId = String(formData.get('point_id') ?? '')
   if (!protocolId || !pointId) return
+  const locale = localeOf(formData)
 
   const supabase = await createClient()
   await supabase
@@ -78,5 +93,5 @@ export async function removePointFromProtocol(formData: FormData) {
     .eq('protocol_id', protocolId)
     .eq('point_id', pointId)
 
-  revalidatePath(`/protocols/${protocolId}`)
+  revalidatePath(routePath(locale, `/protocols/${protocolId}`))
 }

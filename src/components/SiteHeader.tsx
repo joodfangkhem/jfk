@@ -41,7 +41,7 @@ export default function SiteHeader({ locale }: { locale: Locale }) {
               {n.label}
             </Link>
           ))}
-          <AdminNavLink label={d.nav.admin} />
+          <AdminNavLink label={d.nav.admin} locale={locale} />
         </nav>
       </div>
     </header>

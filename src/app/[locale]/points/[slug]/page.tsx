@@ -153,7 +153,7 @@ export default async function PointPage({
 
         <div className="flex flex-wrap gap-2">
           <FavoriteButton pointId={point.id} code={point.code} slug={point.slug} locale={locale} />
-          <AdminEditButton slug={point.slug} />
+          <AdminEditButton slug={point.slug} locale={locale} />
         </div>
       </header>
 

@@ -2,6 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { isLocale, type Locale } from '@/lib/i18n'
+
+/** path ที่ Next เห็นจริงหลัง proxy rewrite — ไทยก็มี prefix /th */
+function routePath(formData: FormData, path: string) {
+  const raw = String(formData.get('locale') ?? '')
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+  return `/${locale}${path}`
+}
 
 /** อนุมัติ: เพิ่มรูปเข้าแกลเลอรีของจุดนั้น (รูปแรกจะถูกตั้งเป็นรูปหลักให้เลย) */
 export async function approveSubmission(formData: FormData) {
@@ -51,8 +59,8 @@ export async function approveSubmission(formData: FormData) {
     .update({ status: 'approved', reviewed_by: user.id, reviewed_at: new Date().toISOString() })
     .eq('id', id)
 
-  revalidatePath('/admin/submissions')
-  revalidatePath('/admin')
+  revalidatePath(routePath(formData, '/admin/submissions'))
+  revalidatePath(routePath(formData, '/admin'))
 }
 
 /** ปฏิเสธ: มาร์คว่าไม่ผ่าน พร้อมเหตุผล และลบไฟล์ทิ้ง */
@@ -80,5 +88,5 @@ export async function rejectSubmission(formData: FormData) {
 
   if (path) await supabase.storage.from('point-images').remove([path])
 
-  revalidatePath('/admin/submissions')
+  revalidatePath(routePath(formData, '/admin/submissions'))
 }

@@ -3,14 +3,24 @@ import type { Metadata } from 'next'
 import { Layers, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { createProtocol } from './actions'
-import { SPECIES_LABEL } from '@/lib/types'
+import { isLocale, lp, t, SPECIES_LABEL_I18N, type Locale } from '@/lib/i18n'
 
-export const metadata: Metadata = {
-  title: 'ชุดจุดของฉัน',
-  robots: { index: false, follow: false },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+  return { title: t(locale).protocol.title, robots: { index: false, follow: false } }
 }
 
-export default async function ProtocolsPage() {
+export default async function ProtocolsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: raw } = await params
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+  const d = t(locale)
+  const species = SPECIES_LABEL_I18N[locale]
+
   const supabase = await createClient()
   const { data: protocols } = await supabase
     .from('protocols')
@@ -21,20 +31,19 @@ export default async function ProtocolsPage() {
     <main className="mx-auto max-w-3xl px-4 py-6 space-y-5">
       <header className="space-y-1">
         <h1 className="text-xl font-bold flex items-center gap-2">
-          <Layers size={19} className="text-primary" /> ชุดจุดของฉัน
+          <Layers size={19} className="text-primary" /> {d.protocol.title}
         </h1>
-        <p className="text-sm text-muted leading-relaxed">
-          จัดกลุ่มจุดเป็นชุดสำหรับเคสที่ทำซ้ำ เปิดดูตอนปักได้เลยไม่ต้องไล่หาทีละจุด
-        </p>
+        <p className="text-sm text-muted leading-relaxed">{d.protocol.intro}</p>
       </header>
 
       <form action={createProtocol} className="card p-4 space-y-3">
-        <h2 className="font-semibold">สร้างชุดใหม่</h2>
+        <h2 className="font-semibold">{d.protocol.createTitle}</h2>
+        <input type="hidden" name="locale" value={locale} />
         <input
           name="name"
           required
           maxLength={80}
-          placeholder="ชื่อชุด เช่น IVDD ระยะฟื้นตัว"
+          placeholder={d.protocol.namePlaceholder}
           className="w-full h-11 px-3.5 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
         />
         <div className="flex gap-2">
@@ -42,14 +51,14 @@ export default async function ProtocolsPage() {
             name="species"
             className="h-11 px-3 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary"
           >
-            <option value="">ทุกชนิดสัตว์</option>
-            <option value="dog">สุนัข</option>
-            <option value="cat">แมว</option>
+            <option value="">{d.protocol.allSpecies}</option>
+            <option value="dog">{species.dog}</option>
+            <option value="cat">{species.cat}</option>
           </select>
           <input
             name="note"
             maxLength={200}
-            placeholder="โน้ตสั้นๆ (ไม่บังคับ)"
+            placeholder={d.protocol.notePlaceholder}
             className="flex-1 h-11 px-3.5 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
           />
         </div>
@@ -57,28 +66,28 @@ export default async function ProtocolsPage() {
           type="submit"
           className="h-11 px-4 inline-flex items-center gap-1.5 rounded-full bg-primary text-white text-sm font-medium active:scale-95 transition"
         >
-          <Plus size={16} /> สร้างชุด
+          <Plus size={16} /> {d.protocol.create}
         </button>
       </form>
 
       {(protocols ?? []).length === 0 ? (
-        <p className="text-sm text-muted">ยังไม่มีชุดจุด สร้างชุดแรกได้จากฟอร์มด้านบน</p>
+        <p className="text-sm text-muted">{d.protocol.empty}</p>
       ) : (
         <div className="space-y-2.5">
           {(protocols ?? []).map((p) => (
             <Link
               key={p.id}
-              href={`/protocols/${p.id}`}
+              href={lp(locale, `/protocols/${p.id}`)}
               className="card p-3.5 block hover:border-primary/50 active:scale-[0.99] transition"
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="font-semibold">{p.name}</p>
                 <span className="chip">
-                  {Array.isArray(p.protocol_points) ? p.protocol_points.length : 0} จุด
+                  {Array.isArray(p.protocol_points) ? p.protocol_points.length : 0} {d.protocol.points}
                 </span>
               </div>
               <p className="text-xs text-muted mt-1">
-                {p.species ? SPECIES_LABEL[p.species] ?? p.species : 'ทุกชนิดสัตว์'}
+                {p.species ? species[p.species] ?? p.species : d.protocol.allSpecies}
                 {p.note ? ` · ${p.note}` : ''}
               </p>
             </Link>

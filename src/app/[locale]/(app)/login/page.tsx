@@ -1,33 +1,37 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { isLocale, lp, t, type Locale } from '@/lib/i18n'
 
 export default function LoginPage() {
+  const params = useParams<{ locale: string }>()
+  const locale: Locale = isLocale(params.locale) ? params.locale : 'th'
   return (
     <Suspense>
-      <LoginInner />
+      <LoginInner locale={locale} />
     </Suspense>
   )
 }
 
-function LoginInner() {
+function LoginInner({ locale }: { locale: Locale }) {
+  const d = t(locale)
   const supabase = createClient()
   const params = useSearchParams()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const err = params.get('error')
-    if (err) toast.error('เข้าสู่ระบบไม่สำเร็จ: ' + err, { duration: 8000 })
-  }, [params])
+    if (err) toast.error(d.login.failed + err, { duration: 8000 })
+  }, [params, d])
 
   const signIn = async () => {
     setLoading(true)
-    const next = params.get('next') || '/'
+    const next = params.get('next') || lp(locale, '/')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -36,7 +40,7 @@ function LoginInner() {
       },
     })
     if (error) {
-      toast.error('เชื่อมต่อ Google ไม่ได้')
+      toast.error(d.login.noGoogle)
       setLoading(false)
     }
   }
@@ -45,7 +49,7 @@ function LoginInner() {
     <main className="mx-auto max-w-md px-4 py-12 space-y-6 text-center">
       <Image
         src="/logo.png"
-        alt="JFK จุดฝังเข็ม"
+        alt={`JFK ${d.brandSuffix}`}
         width={900}
         height={547}
         priority
@@ -53,13 +57,13 @@ function LoginInner() {
       />
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
+        <h1 className="text-2xl font-bold">{d.login.title}</h1>
         <p className="text-sm text-muted leading-relaxed">
-          เนื้อหาจุดฝังเข็มทั้งหมดอ่านได้ฟรีไม่ต้องล็อกอิน
+          {d.login.free}
           <br />
-          ล็อกอินเพื่อ <strong className="text-text">บันทึกจุดที่ใช้บ่อย</strong>,{' '}
-          <strong className="text-text">จดโน้ตของตัวเอง</strong> และ{' '}
-          <strong className="text-text">สร้างชุดจุด</strong>
+          {d.login.lead} <strong className="text-text">{d.login.b1}</strong>,{' '}
+          <strong className="text-text">{d.login.b2}</strong> {d.login.and}{' '}
+          <strong className="text-text">{d.login.b3}</strong>
         </p>
       </div>
 
@@ -69,12 +73,12 @@ function LoginInner() {
         className="w-full flex items-center justify-center gap-3 h-14 rounded-2xl bg-surface border border-border font-medium shadow-[var(--shadow)] active:scale-[0.98] transition disabled:opacity-60"
       >
         <GoogleMark />
-        {loading ? 'กำลังเชื่อมต่อ…' : 'เข้าสู่ระบบด้วย Google'}
+        {loading ? d.login.connecting : d.login.google}
       </button>
 
       <p className="text-xs text-muted leading-relaxed">
-        เราเก็บแค่อีเมลเพื่อผูกกับข้อมูลที่คุณบันทึก · อ่าน{' '}
-        <Link href="/privacy" className="text-primary underline">นโยบายความเป็นส่วนตัว</Link>
+        {d.login.fine}{' '}
+        <Link href={lp(locale, '/privacy')} className="text-primary underline">{d.login.privacy}</Link>
       </p>
     </main>
   )

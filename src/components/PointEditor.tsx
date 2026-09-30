@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation'
 import { Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { t, type Locale } from '@/lib/i18n'
 import type { Point } from '@/lib/types'
 
 /** ฟอร์มแก้ข้อมูลจุดสำหรับผู้ดูแล — รวมอัปโหลดรูปตำแหน่งจุด */
-export default function PointEditor({ point }: { point: Point }) {
+export default function PointEditor({ point, locale = 'th' }: { point: Point; locale?: Locale }) {
+  const d = t(locale).editor
   const supabase = createClient()
   const router = useRouter()
   const [form, setForm] = useState({
@@ -43,9 +45,9 @@ export default function PointEditor({ point }: { point: Point }) {
       })
       .eq('id', point.id)
     setBusy(false)
-    if (error) toast.error('บันทึกไม่สำเร็จ: ' + error.message)
+    if (error) toast.error(d.failed + error.message)
     else {
-      toast.success('บันทึกแล้ว')
+      toast.success(d.saved)
       router.refresh()
     }
   }
@@ -53,17 +55,17 @@ export default function PointEditor({ point }: { point: Point }) {
   return (
     <div className="space-y-4">
       <section className="card p-4 space-y-3">
-        <Field label="ชื่อไทย" value={form.name_th} onChange={set('name_th')} />
-        <Area label="ตำแหน่ง" value={form.location_th} onChange={set('location_th')} rows={3} />
-        <Area label="Landmark / กายวิภาค" value={form.anatomy_th} onChange={set('anatomy_th')} rows={2} />
-        <Area label="สรรพคุณ" value={form.functions_th} onChange={set('functions_th')} rows={2} />
+        <Field label={d.nameTh} value={form.name_th} onChange={set('name_th')} />
+        <Area label={d.location} value={form.location_th} onChange={set('location_th')} rows={3} />
+        <Area label={d.landmark} value={form.anatomy_th} onChange={set('anatomy_th')} rows={2} />
+        <Area label={d.functions} value={form.functions_th} onChange={set('functions_th')} rows={2} />
         <Field
-          label="ข้อบ่งใช้ (คั่นด้วยจุลภาค)"
+          label={d.indications}
           value={form.indications}
           onChange={set('indications')}
         />
-        <Area label="เทคนิคการปัก" value={form.needle_th} onChange={set('needle_th')} rows={2} />
-        <Area label="ข้อควรระวัง" value={form.caution_th} onChange={set('caution_th')} rows={2} />
+        <Area label={d.needle} value={form.needle_th} onChange={set('needle_th')} rows={2} />
+        <Area label={d.caution} value={form.caution_th} onChange={set('caution_th')} rows={2} />
       </section>
 
       <button
@@ -71,7 +73,7 @@ export default function PointEditor({ point }: { point: Point }) {
         disabled={busy}
         className="h-11 px-5 inline-flex items-center gap-2 rounded-full bg-primary text-white text-sm font-medium active:scale-95 transition disabled:opacity-60"
       >
-        <Save size={16} /> {busy ? 'กำลังบันทึก…' : 'บันทึก'}
+        <Save size={16} /> {busy ? d.saving : d.save}
       </button>
     </div>
   )

@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useIsAdmin } from '@/lib/useIsAdmin'
+import { lp, type Locale } from '@/lib/i18n'
 
 /** แถบเมนู "ผู้ดูแล" — ขึ้นเฉพาะบัญชีที่เป็นแอดมิน */
-export default function AdminNavLink({ label = 'ผู้ดูแล' }: { label?: string }) {
+export default function AdminNavLink({ label, locale = 'th' }: { label: string; locale?: Locale }) {
   const isAdmin = useIsAdmin()
   const [pending, setPending] = useState(0)
 
@@ -27,7 +28,7 @@ export default function AdminNavLink({ label = 'ผู้ดูแล' }: { labe
 
   return (
     <Link
-      href="/admin"
+      href={lp(locale, '/admin')}
       className="px-3 py-1.5 rounded-full text-sm font-medium text-accent bg-accent-soft border border-accent/20 hover:border-accent/40 transition whitespace-nowrap inline-flex items-center gap-1.5"
     >
       <ShieldCheck size={14} /> {label}

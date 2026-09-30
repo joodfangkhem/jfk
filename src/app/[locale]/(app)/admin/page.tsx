@@ -2,17 +2,29 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Inbox, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 
-export const metadata: Metadata = {
-  title: 'ผู้ดูแล',
-  robots: { index: false, follow: false },
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale: raw } = await params
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+  return { title: t(locale).admin.title, robots: { index: false, follow: false } }
 }
 
 export default async function AdminPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>
   searchParams: Promise<{ q?: string; noimage?: string; unverified?: string }>
 }) {
+  const { locale: raw } = await params
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+  const d = t(locale)
+
   const { q, noimage, unverified } = await searchParams
   const supabase = await createClient()
 
@@ -28,11 +40,8 @@ export default async function AdminPage({
   if (!admin) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-10 space-y-3">
-        <h1 className="text-xl font-bold">สำหรับผู้ดูแลเท่านั้น</h1>
-        <p className="text-sm text-muted leading-relaxed">
-          บัญชีนี้ยังไม่ได้เป็นผู้ดูแล ถ้าเป็นเจ้าของเว็บ ให้รันคำสั่งนี้ใน Supabase SQL Editor
-          หนึ่งครั้ง แล้วรีเฟรชหน้านี้
-        </p>
+        <h1 className="text-xl font-bold">{d.admin.notAdminTitle}</h1>
+        <p className="text-sm text-muted leading-relaxed">{d.admin.notAdminBody}</p>
         <pre className="card p-3 text-xs overflow-x-auto leading-relaxed">
 {`insert into admins (user_id, note)
 select id, 'owner' from auth.users
@@ -45,7 +54,7 @@ on conflict (user_id) do nothing;`}
 
   let query = supabase
     .from('points')
-    .select('id, code, slug, name_th, image_url, verified')
+    .select('id, code, slug, name_th, name_en, image_url, verified')
     .order('popularity', { ascending: false })
     .limit(200)
   if (q) query = query.ilike('search_text', `%${q}%`)
@@ -59,62 +68,64 @@ on conflict (user_id) do nothing;`}
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending')
 
+  const base = lp(locale, '/admin')
+  const filterHref = (extra?: string) =>
+    `${base}${q ? `?q=${encodeURIComponent(q)}${extra ? `&${extra}` : ''}` : extra ? `?${extra}` : ''}`
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 space-y-5">
       <header className="space-y-1">
         <h1 className="text-xl font-bold flex items-center gap-2">
-          <ShieldCheck size={19} className="text-primary" /> ผู้ดูแล — แก้เนื้อหาจุด
+          <ShieldCheck size={19} className="text-primary" /> {d.admin.heading}
         </h1>
-        <p className="text-sm text-muted">
-          มีรูปแล้ว {withImage} จาก {points?.length ?? 0} จุดที่แสดง
-        </p>
+        <p className="text-sm text-muted">{d.admin.stat(withImage, points?.length ?? 0)}</p>
       </header>
 
       <div className="flex gap-1.5">
         <Link
-          href={q ? `/admin?q=${encodeURIComponent(q)}` : '/admin'}
+          href={filterHref()}
           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
-            !noimage
+            !noimage && !unverified
               ? 'bg-primary text-white border-primary'
               : 'bg-surface text-muted border-border hover:text-primary'
           }`}
         >
-          ทั้งหมด
+          {d.admin.all}
         </Link>
         <Link
-          href={q ? `/admin?q=${encodeURIComponent(q)}&noimage=1` : '/admin?noimage=1'}
+          href={filterHref('noimage=1')}
           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
             noimage
               ? 'bg-primary text-white border-primary'
               : 'bg-surface text-muted border-border hover:text-primary'
           }`}
         >
-          ยังไม่มีรูป
+          {d.admin.noImage}
         </Link>
         <Link
-          href={q ? `/admin?q=${encodeURIComponent(q)}&unverified=1` : '/admin?unverified=1'}
+          href={filterHref('unverified=1')}
           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
             unverified
               ? 'bg-warn text-white border-warn'
               : 'bg-surface text-muted border-border hover:text-warn'
           }`}
         >
-          รอตรวจสอบ
+          {d.admin.unverified}
         </Link>
       </div>
 
       <Link
-        href="/admin/submissions"
+        href={lp(locale, '/admin/submissions')}
         className="card p-3.5 flex items-center gap-3 hover:border-primary/50 transition"
       >
         <Inbox size={18} className="text-primary shrink-0" />
-        <span className="flex-1 text-sm font-medium">รูปที่ผู้ใช้ส่งเข้ามา</span>
+        <span className="flex-1 text-sm font-medium">{d.admin.inbox}</span>
         {pendingCount ? (
           <span className="min-w-6 h-6 px-2 inline-flex items-center justify-center rounded-full bg-accent text-white text-xs font-bold">
             {pendingCount}
           </span>
         ) : (
-          <span className="chip">ไม่มีรอตรวจ</span>
+          <span className="chip">{d.admin.inboxEmpty}</span>
         )}
       </Link>
 
@@ -122,27 +133,30 @@ on conflict (user_id) do nothing;`}
         <input
           name="q"
           defaultValue={q ?? ''}
-          placeholder="ค้นหาจุดที่จะแก้"
+          placeholder={d.admin.searchPlaceholder}
           className="flex-1 h-11 px-3.5 rounded-xl border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
         />
         {noimage && <input type="hidden" name="noimage" value="1" />}
-        <button className="h-11 px-4 rounded-full bg-primary text-white text-sm font-medium">ค้นหา</button>
+        {unverified && <input type="hidden" name="unverified" value="1" />}
+        <button className="h-11 px-4 rounded-full bg-primary text-white text-sm font-medium">
+          {d.admin.search}
+        </button>
       </form>
 
       <div className="space-y-2">
         {(points ?? []).map((p) => (
           <Link
             key={p.id}
-            href={`/admin/points/${p.slug}`}
+            href={lp(locale, `/admin/points/${p.slug}`)}
             className="card p-3 flex items-center gap-3 hover:border-primary/50 transition"
           >
             <span className="shrink-0 min-w-14 h-7 px-2 inline-flex items-center justify-center rounded-lg bg-primary-soft text-primary font-bold text-[13px]">
               {p.code}
             </span>
-            <span className="flex-1 text-sm truncate">{p.name_th}</span>
-            {!p.verified && <span className="chip text-warn border-warn/30">รอตรวจ</span>}
+            <span className="flex-1 text-sm truncate">{pick(locale, p.name_th, p.name_en)}</span>
+            {!p.verified && <span className="chip text-warn border-warn/30">{d.admin.pendingChip}</span>}
             <span className={`chip ${p.image_url ? 'text-primary border-primary/30' : ''}`}>
-              {p.image_url ? 'มีรูป' : 'ยังไม่มีรูป'}
+              {p.image_url ? d.admin.hasImage : d.admin.noImage}
             </span>
           </Link>
         ))}

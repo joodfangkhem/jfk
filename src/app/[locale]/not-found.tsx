@@ -14,7 +14,7 @@ export default function NotFound() {
           ค้นหาจุดฝังเข็ม
         </Link>
         <Link href="/en/points" className="h-11 px-4 inline-flex items-center rounded-full border border-border text-sm font-medium">
-          Search points
+          Search Points
         </Link>
       </div>
     </main>

@@ -5,6 +5,7 @@ import { ImagePlus, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImage } from '@/lib/resizeImage'
+import { t, type Locale } from '@/lib/i18n'
 
 type Img = {
   id: string
@@ -21,10 +22,13 @@ const MAX = 6
 export default function PointGalleryManager({
   pointId,
   slug,
+  locale = 'th',
 }: {
   pointId: string
   slug: string
+  locale?: Locale
 }) {
+  const d = t(locale).gallery
   const [supabase] = useState(() => createClient())
   const [images, setImages] = useState<Img[]>([])
   const [busy, setBusy] = useState(false)
@@ -55,9 +59,11 @@ export default function PointGalleryManager({
   }, [supabase, pointId])
 
   const upload = async (file: File) => {
-    if (images.length >= MAX) return toast.error(`เก็บได้สูงสุด ${MAX} รูป ลบรูปเก่าก่อน`)
+    if (images.length >= MAX) return toast.error(d.full(MAX))
     setBusy(true)
     const small = await resizeImage(file)
+    // ชื่อไฟล์ต้องไม่ซ้ำ จึงต้องใช้เวลาปัจจุบัน — อยู่ใน event handler ไม่ใช่ตอน render
+    // eslint-disable-next-line react-hooks/purity
     const path = `gallery/${slug}-${Date.now()}.jpg`
 
     const { error: upErr } = await supabase.storage
@@ -65,7 +71,7 @@ export default function PointGalleryManager({
       .upload(path, small, { cacheControl: '31536000', upsert: false })
     if (upErr) {
       setBusy(false)
-      return toast.error('อัปโหลดไม่สำเร็จ: ' + upErr.message)
+      return toast.error(d.uploadFailed + upErr.message)
     }
 
     const { data: pub } = supabase.storage.from('point-images').getPublicUrl(path)
@@ -89,7 +95,7 @@ export default function PointGalleryManager({
     }
     await load()
     setBusy(false)
-    toast.success('เพิ่มรูปแล้ว')
+    toast.success(d.added)
   }
 
   const setPrimary = async (id: string) => {
@@ -98,7 +104,7 @@ export default function PointGalleryManager({
     await load()
     setBusy(false)
     if (error) toast.error(error.message)
-    else toast.success('ตั้งเป็นรูปหลักแล้ว')
+    else toast.success(d.primarySet)
   }
 
   const remove = async (img: Img) => {
@@ -110,7 +116,7 @@ export default function PointGalleryManager({
     await load()
     setBusy(false)
     if (error) toast.error(error.message)
-    else toast.success('ลบรูปแล้ว')
+    else toast.success(d.removed)
   }
 
   const saveText = async (id: string, caption: string, credit: string) => {
@@ -125,20 +131,18 @@ export default function PointGalleryManager({
     await load()
     setBusy(false)
     if (error) toast.error(error.message)
-    else toast.success('บันทึกแล้ว')
+    else toast.success(d.saved)
   }
 
   return (
     <section className="card p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">รูปของจุดนี้</h2>
-        <span className="chip">
-          {images.length}/{MAX} รูป
-        </span>
+        <h2 className="font-semibold">{d.title}</h2>
+        <span className="chip">{d.count(images.length, MAX)}</span>
       </div>
 
       {images.length === 0 && (
-        <p className="text-sm text-muted">ยังไม่มีรูป — อัปโหลดรูปแรกจะถูกตั้งเป็นรูปหลักอัตโนมัติ</p>
+        <p className="text-sm text-muted">{d.empty}</p>
       )}
 
       <div className="space-y-3">
@@ -150,6 +154,7 @@ export default function PointGalleryManager({
             onPrimary={() => setPrimary(img.id)}
             onRemove={() => remove(img)}
             onSave={(c, cr) => saveText(img.id, c, cr)}
+            locale={locale}
           />
         ))}
       </div>
@@ -157,7 +162,7 @@ export default function PointGalleryManager({
       {images.length < MAX && (
         <label className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-border bg-surface-2 text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition">
           <ImagePlus size={16} />
-          {busy ? 'กำลังทำงาน…' : 'เพิ่มรูป'}
+          {busy ? d.working : d.add}
           <input
             type="file"
             accept="image/*"
@@ -172,9 +177,7 @@ export default function PointGalleryManager({
         </label>
       )}
 
-      <p className="text-xs text-muted leading-relaxed">
-        ระบบย่อรูปให้อัตโนมัติ (ด้านยาว 1600px) · รูปหลักคือรูปที่ขึ้นบนสุดของหน้าจุดและใช้ตอนแชร์ลิงก์
-      </p>
+      <p className="text-xs text-muted leading-relaxed">{d.note}</p>
     </section>
   )
 }
@@ -185,13 +188,16 @@ function ImageRow({
   onPrimary,
   onRemove,
   onSave,
+  locale,
 }: {
   img: Img
   busy: boolean
   onPrimary: () => void
   onRemove: () => void
   onSave: (caption: string, credit: string) => void
+  locale: Locale
 }) {
+  const d = t(locale).gallery
   const [caption, setCaption] = useState(img.caption ?? '')
   const [credit, setCredit] = useState(img.credit ?? '')
   const dirty = caption !== (img.caption ?? '') || credit !== (img.credit ?? '')
@@ -208,7 +214,7 @@ function ImageRow({
         <div className="flex items-center gap-2 flex-wrap">
           {img.is_primary ? (
             <span className="chip text-primary border-primary/30">
-              <Star size={11} fill="currentColor" /> รูปหลัก
+              <Star size={11} fill="currentColor" /> {d.primary}
             </span>
           ) : (
             <button
@@ -216,7 +222,7 @@ function ImageRow({
               disabled={busy}
               className="chip hover:border-primary hover:text-primary disabled:opacity-50"
             >
-              <Star size={11} /> ตั้งเป็นรูปหลัก
+              <Star size={11} /> {d.makePrimary}
             </button>
           )}
         </div>
@@ -225,7 +231,7 @@ function ImageRow({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           maxLength={80}
-          placeholder="คำบรรยาย เช่น มุมด้านข้าง / พุดเดิ้ลขาสั้น"
+          placeholder={d.captionPlaceholder}
           className="w-full h-9 px-3 rounded-lg border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
         />
         <div className="flex gap-2">
@@ -233,7 +239,7 @@ function ImageRow({
             value={credit}
             onChange={(e) => setCredit(e.target.value)}
             maxLength={60}
-            placeholder="เครดิตภาพ"
+            placeholder={d.creditPlaceholder}
             className="flex-1 h-9 px-3 rounded-lg border border-border bg-surface-2 text-sm outline-none focus:border-primary focus:bg-surface"
           />
           <button
@@ -241,12 +247,12 @@ function ImageRow({
             disabled={busy || !dirty}
             className="h-9 px-3 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-40"
           >
-            บันทึก
+            {d.save}
           </button>
           <button
             onClick={onRemove}
             disabled={busy}
-            aria-label="ลบรูปนี้"
+            aria-label={d.removeLabel}
             className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-muted hover:text-accent hover:bg-accent-soft disabled:opacity-40"
           >
             <Trash2 size={15} />
