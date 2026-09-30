@@ -34,6 +34,7 @@ export type Point = {
   indications: string[]
   indications_en: string[]
   point_types: string[]
+  point_types_en: string[] | null
   needle_th: string | null
   needle_en: string | null
   caution_th: string | null

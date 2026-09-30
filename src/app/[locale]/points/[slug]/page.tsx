@@ -143,8 +143,8 @@ export default async function PointPage({
           {!point.verified && (
             <span className="chip bg-warn-soft text-warn border-warn/25">{d.point.unverified}</span>
           )}
-          {point.point_types.map((t) => (
-            <span key={t} className="chip">{t}</span>
+          {pickArr(locale, point.point_types, point.point_types_en).map((ty) => (
+            <span key={ty} className="chip">{ty}</span>
           ))}
           {point.species.map((s) => (
             <span key={s} className="chip">{SPECIES_LABEL_I18N[locale][s] ?? s}</span>
