@@ -16,7 +16,7 @@ export async function generateMetadata({
     alternates: { canonical: lp(locale, '/guide'), languages: altLanguages('/guide') },
     title:
       locale === 'en'
-        ? 'Guide — cun, point categories, needle sizes'
+        ? 'Guide — Cun, Point Categories, Needle Sizes'
         : 'คู่มือใช้งาน — cun, ชนิดของจุด, ขนาดเข็ม',
     description:
       locale === 'en'
@@ -44,7 +44,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
 
       <section className="card p-4 space-y-3">
         <h2 className="font-bold text-lg">
-          {en ? 'How a cun is measured in animals' : '1 cun วัดยังไงในสัตว์'}
+          {en ? 'How a Cun Is Measured in Animals' : '1 cun วัดยังไงในสัตว์'}
         </h2>
         <p className="text-[15px] leading-relaxed">
           {en
@@ -82,7 +82,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
       </section>
 
       <section className="card p-4 space-y-3">
-        <h2 className="font-bold text-lg">{en ? 'Point categories' : 'ชนิดของจุด (point types)'}</h2>
+        <h2 className="font-bold text-lg">{en ? 'Point Categories' : 'ชนิดของจุด (point types)'}</h2>
         <dl className="space-y-2.5 text-[15px] leading-relaxed">
           <Term t="Yuan-source">
             {en
@@ -135,7 +135,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
       <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_GUIDE} label={d.ad} />
 
       <section className="card p-4 space-y-3">
-        <h2 className="font-bold text-lg">{en ? 'Needle sizes in practice' : 'ขนาดเข็มที่ใช้บ่อย'}</h2>
+        <h2 className="font-bold text-lg">{en ? 'Needle Sizes in Practice' : 'ขนาดเข็มที่ใช้บ่อย'}</h2>
         <ul className="text-[15px] leading-relaxed space-y-2 list-disc pl-5">
           <li><strong>{en ? 'Cats and small-breed dogs:' : 'แมวและสุนัขพันธุ์เล็ก:'}</strong> 0.16-0.20 × 13-25 mm</li>
           <li><strong>{en ? 'Medium-breed dogs:' : 'สุนัขพันธุ์กลาง:'}</strong> 0.20-0.25 × 25-40 mm</li>
@@ -151,7 +151,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
 
       <section className="card p-4 bg-warn-soft border-warn/25 space-y-3">
         <h2 className="font-bold text-lg flex items-center gap-2 text-warn">
-          <AlertTriangle size={18} /> {en ? 'Contraindications and cautions' : 'ข้อห้ามและข้อควรระวัง'}
+          <AlertTriangle size={18} /> {en ? 'Contraindications and Cautions' : 'ข้อห้ามและข้อควรระวัง'}
         </h2>
         <ul className="text-[15px] leading-relaxed space-y-2 list-disc pl-5 text-text/85">
           <li>{en ? 'Never needle through infected skin, an open wound, or directly into a tumour.' : 'ห้ามปักผ่านผิวหนังที่ติดเชื้อ เป็นแผลเปิด หรือบนก้อนเนื้องอกโดยตรง'}</li>
@@ -168,11 +168,11 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
       <p className="text-sm text-muted">
         {en ? 'Start at the ' : 'เริ่มค้นจุดได้ที่ '}
         <Link href={lp(locale, '/points')} className="text-primary underline">
-          {en ? 'point search' : 'หน้าค้นหาจุด'}
+          {en ? 'Point Search' : 'หน้าค้นหาจุด'}
         </Link>
         {en ? ' or ' : ' หรือ '}
         <Link href={lp(locale, '/conditions')} className="text-primary underline">
-          {en ? 'browse by condition' : 'เลือกตามอาการ'}
+          {en ? 'Browse by Condition' : 'เลือกตามอาการ'}
         </Link>
       </p>
     </main>

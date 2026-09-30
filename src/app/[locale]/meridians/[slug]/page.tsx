@@ -25,11 +25,11 @@ export async function generateMetadata({
   const { locale: raw, slug } = await params
   const locale: Locale = isLocale(raw) ? raw : 'th'
   const m = await getMeridian(slug)
-  if (!m) return { title: locale === 'en' ? 'Meridian not found' : 'ไม่พบเส้นลมปราณนี้' }
+  if (!m) return { title: locale === 'en' ? 'Meridian Not Found' : 'ไม่พบเส้นลมปราณนี้' }
   const name = locale === 'en' ? m.name_en : m.name_th
   return {
     title:
-      locale === 'en' ? `${name} (${m.code}) — points on the channel` : `${name} (${m.code}) — จุดบนเส้น`,
+      locale === 'en' ? `${name} (${m.code}) — Points on the Channel` : `${name} (${m.code}) — จุดบนเส้น`,
     description:
       pick(locale, m.summary_th, m.summary_en) ||
       (locale === 'en' ? `Acupuncture points on the ${name} in dogs and cats` : `จุดฝังเข็มบน${name}ในสุนัขและแมว`),

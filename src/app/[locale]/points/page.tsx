@@ -17,7 +17,7 @@ export async function generateMetadata({
   const locale: Locale = isLocale(raw) ? raw : 'th'
   return {
     alternates: { canonical: lp(locale, '/points'), languages: altLanguages('/points') },
-    title: locale === 'en' ? 'Search acupuncture points' : 'ค้นหาจุดฝังเข็ม',
+    title: locale === 'en' ? 'Search Acupuncture Points' : 'ค้นหาจุดฝังเข็ม',
     description:
       locale === 'en'
         ? 'Search veterinary acupuncture points by code, Chinese name, location or clinical sign. Filter by species and meridian.'

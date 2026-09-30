@@ -46,7 +46,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
               <strong>Where the data comes from:</strong> locations follow the transpositional system
               taught in the international veterinary acupuncture curricula (IVAS / Chi Institute), which
               maps human point locations onto animal anatomy. Texts differ slightly from one another, so
-              always confirm the landmarks by palpation. Points marked <em>needs review</em> are ones
+              always confirm the landmarks by palpation. Points marked <em>Needs Review</em> are ones
               rarely used in animals, where the transposition is much less standardised.
             </p>
             <p>
@@ -112,7 +112,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
 
       <p className="text-sm text-muted">
         <Link href={lp(locale, '/privacy')} className="text-primary underline">
-          {en ? 'Privacy policy' : 'นโยบายความเป็นส่วนตัว'}
+          {en ? 'Privacy Policy' : 'นโยบายความเป็นส่วนตัว'}
         </Link>
       </p>
     </main>

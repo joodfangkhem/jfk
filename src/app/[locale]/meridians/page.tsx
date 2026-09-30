@@ -15,7 +15,7 @@ export async function generateMetadata({
   const locale: Locale = isLocale(raw) ? raw : 'th'
   return {
     alternates: { canonical: lp(locale, '/meridians'), languages: altLanguages('/meridians') },
-    title: locale === 'en' ? 'The 14 meridians' : 'เส้นลมปราณทั้ง 14 เส้น',
+    title: locale === 'en' ? 'The 14 Meridians' : 'เส้นลมปราณทั้ง 14 เส้น',
     description:
       locale === 'en'
         ? 'The meridians used in veterinary acupuncture with their element, yin-yang, peak hours and the points on each channel.'

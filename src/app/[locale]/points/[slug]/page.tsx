@@ -38,11 +38,11 @@ export async function generateMetadata({
   const { locale: raw, slug } = await params
   const locale: Locale = isLocale(raw) ? raw : 'th'
   const point = await getPoint(slug)
-  if (!point) return { title: locale === 'en' ? 'Point not found' : 'ไม่พบจุดนี้' }
+  if (!point) return { title: locale === 'en' ? 'Point Not Found' : 'ไม่พบจุดนี้' }
 
   const localName = locale === 'en' ? point.name_en : point.name_th
   const name = [point.code, localName, point.name_pinyin].filter(Boolean).join(' ')
-  const tail = locale === 'en' ? 'veterinary acupuncture point' : 'จุดฝังเข็มในสัตว์'
+  const tail = locale === 'en' ? 'Veterinary Acupuncture Point' : 'จุดฝังเข็มในสัตว์'
   const desc = (
     locale === 'en'
       ? `Location: ${pick(locale, point.location_th, point.location_en)} ${pick(locale, point.functions_th, point.functions_en)} Indications: ${pickArr(locale, point.indications, point.indications_en).slice(0, 6).join(', ')}`

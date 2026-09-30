@@ -15,7 +15,7 @@ export async function generateMetadata({
   const locale: Locale = isLocale(raw) ? raw : 'th'
   return {
     alternates: { canonical: lp(locale, '/conditions'), languages: altLanguages('/conditions') },
-    title: locale === 'en' ? 'Acupuncture points by condition' : 'เลือกจุดตามอาการ',
+    title: locale === 'en' ? 'Acupuncture Points by Condition' : 'เลือกจุดตามอาการ',
     description:
       locale === 'en'
         ? 'Point sets for common conditions in dogs and cats: IVDD, hindlimb paresis, osteoarthritis, vomiting, diarrhoea, seizures, pruritus.'

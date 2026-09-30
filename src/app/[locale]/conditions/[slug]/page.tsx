@@ -25,10 +25,10 @@ export async function generateMetadata({
   const { locale: raw, slug } = await params
   const locale: Locale = isLocale(raw) ? raw : 'th'
   const c = await getCondition(slug)
-  if (!c) return { title: locale === 'en' ? 'Condition not found' : 'ไม่พบอาการนี้' }
+  if (!c) return { title: locale === 'en' ? 'Condition Not Found' : 'ไม่พบอาการนี้' }
   const name = locale === 'en' && c.name_en ? c.name_en : c.name_th
   return {
-    title: locale === 'en' ? `Acupuncture for ${name} — points used` : `ฝังเข็มสำหรับ${name} — จุดที่ใช้`,
+    title: locale === 'en' ? `Acupuncture for ${name} — Points Used` : `ฝังเข็มสำหรับ${name} — จุดที่ใช้`,
     description:
       pick(locale, c.summary_th, c.summary_en) ||
       (locale === 'en'
