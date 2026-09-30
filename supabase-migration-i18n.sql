@@ -3,12 +3,12 @@
 -- คอลัมน์ _en ว่างได้ ถ้าไม่มีจะ fallback ไปใช้ภาษาไทยอัตโนมัติ
 -- =============================================================
 
+alter table points     add column if not exists location_en    text;
 alter table points     add column if not exists anatomy_en     text;
 alter table points     add column if not exists functions_en   text;
 alter table points     add column if not exists indications_en text[] not null default '{}';
 alter table points     add column if not exists needle_en      text;
 alter table points     add column if not exists caution_en     text;
--- location_en มีอยู่แล้วตั้งแต่ schema แรก (ยังว่าง)
 
 alter table meridians  add column if not exists summary_en text;
 
