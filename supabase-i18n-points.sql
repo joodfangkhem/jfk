@@ -7,7 +7,7 @@ update points set
   location_en    = v.loc,
   anatomy_en     = v.ana,
   functions_en   = v.fun,
-  indications_en = v.ind,
+  indications_en = v.ind::text[],
   needle_en      = v.ndl,
   caution_en     = v.cau
 from (values
@@ -87,7 +87,7 @@ update points set
   location_en    = v.loc,
   anatomy_en     = v.ana,
   functions_en   = v.fun,
-  indications_en = v.ind,
+  indications_en = v.ind::text[],
   needle_en      = v.ndl,
   caution_en     = v.cau
 from (values
