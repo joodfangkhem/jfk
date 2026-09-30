@@ -3,16 +3,20 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { lp, t, type Locale } from '@/lib/i18n'
 
 export default function SearchBox({
   autoFocus = false,
-  placeholder = 'ค้นหา: BL-23, Bai Hui, ปวดหลัง, อาเจียน…',
+  placeholder,
   size = 'md',
+  locale = 'th',
 }: {
   autoFocus?: boolean
   placeholder?: string
   size?: 'md' | 'lg'
+  locale?: Locale
 }) {
+  const d = t(locale)
   const router = useRouter()
   const params = useSearchParams()
   const paramQ = params.get('q') ?? ''
@@ -32,7 +36,7 @@ export default function SearchBox({
     if (term) sp.set('q', term)
     const species = params.get('species')
     if (species) sp.set('species', species)
-    router.push(`/points${sp.toString() ? `?${sp}` : ''}`)
+    router.push(lp(locale, `/points${sp.toString() ? `?${sp}` : ''}`))
   }
 
   const h = size === 'lg' ? 'h-14 text-base' : 'h-11 text-sm'
@@ -48,15 +52,15 @@ export default function SearchBox({
         onChange={(e) => setQ(e.target.value)}
         autoFocus={autoFocus}
         enterKeyHint="search"
-        placeholder={placeholder}
-        aria-label="ค้นหาจุดฝังเข็ม"
+        placeholder={placeholder ?? d.search.placeholder}
+        aria-label={d.search.label}
         className={`w-full ${h} pl-11 pr-11 rounded-full bg-surface border border-border shadow-[var(--shadow)] outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft transition`}
       />
       {q && (
         <button
           type="button"
           onClick={() => setQ('')}
-          aria-label="ล้างคำค้น"
+          aria-label={d.search.clear}
           className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-text"
         >
           <X size={17} />

@@ -11,10 +11,12 @@ export default function AdSlot({
   slot,
   format = 'auto',
   className = '',
+  label = 'โฆษณา',
 }: {
   slot?: string
   format?: string
   className?: string
+  label?: string
 }) {
   const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
   const ref = useRef<HTMLModElement>(null)
@@ -57,7 +59,7 @@ export default function AdSlot({
 
   return (
     <div className={`my-6 ${className}`}>
-      <p className="text-[10px] text-muted mb-1 text-center tracking-wide">โฆษณา</p>
+      <p className="text-[10px] text-muted mb-1 text-center tracking-wide">{label}</p>
       <ins
         ref={ref}
         className="adsbygoogle block"

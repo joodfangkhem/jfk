@@ -16,10 +16,14 @@ export default function PointGallery({
   images,
   code,
   nameTh,
+  emptyTitle = 'ยังไม่มีรูปตำแหน่งของจุดนี้',
+  emptySub = 'ถ้ามีรูป ช่วยส่งเข้ามาได้ที่กล่องด้านล่าง',
 }: {
   images: GalleryImage[]
   code: string
   nameTh: string | null
+  emptyTitle?: string
+  emptySub?: string
 }) {
   const [active, setActive] = useState(0)
 
@@ -28,9 +32,9 @@ export default function PointGallery({
       <div className="card p-6 flex flex-col items-center justify-center text-center gap-2 bg-surface-2 border-dashed">
         <Camera size={22} className="text-muted" />
         <p className="text-sm text-muted leading-relaxed">
-          ยังไม่มีรูปตำแหน่งของจุดนี้
+          {emptyTitle}
           <br />
-          <span className="text-xs">ถ้ามีรูป ช่วยส่งเข้ามาได้ที่กล่องด้านล่าง</span>
+          <span className="text-xs">{emptySub}</span>
         </p>
       </div>
     )

@@ -2,9 +2,10 @@ import type { Metadata } from 'next'
 import { IBM_Plex_Sans_Thai } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { siteUrl } from '@/lib/site'
+import { isLocale, locales, type Locale } from '@/lib/i18n'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
-import './globals.css'
+import '../globals.css'
 
 const plex = IBM_Plex_Sans_Thai({
   subsets: ['thai', 'latin'],
@@ -44,9 +45,22 @@ export const metadata: Metadata = {
   ...(adsClient ? { other: { 'google-adsense-account': adsClient } } : {}),
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }))
+}
+
+export default async function RootLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}) {
+  const { locale: raw } = await params
+  const locale: Locale = isLocale(raw) ? raw : 'th'
+
   return (
-    <html lang="th">
+    <html lang={locale}>
       <head>
         {/* ใช้ <script> ธรรมดาแทน next/script เพราะ next/script ออกมาเป็นแค่ link rel=preload
             ใน HTML ทำให้ crawler ของ AdSense หาโค้ดไม่เจอและยืนยันเว็บไม่ผ่าน */}
@@ -59,9 +73,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       </head>
       <body className={`${plex.className} min-h-dvh flex flex-col`}>
-        <SiteHeader />
+        <SiteHeader locale={locale} />
         <div className="flex-1">{children}</div>
-        <SiteFooter />
+        <SiteFooter locale={locale} />
         <Toaster position="top-center" toastOptions={{ style: { fontSize: 14 } }} />
       </body>
     </html>

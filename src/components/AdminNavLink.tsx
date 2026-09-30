@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useIsAdmin } from '@/lib/useIsAdmin'
 
 /** แถบเมนู "ผู้ดูแล" — ขึ้นเฉพาะบัญชีที่เป็นแอดมิน */
-export default function AdminNavLink() {
+export default function AdminNavLink({ label = 'ผู้ดูแล' }: { label?: string }) {
   const isAdmin = useIsAdmin()
   const [pending, setPending] = useState(0)
 
@@ -30,7 +30,7 @@ export default function AdminNavLink() {
       href="/admin"
       className="px-3 py-1.5 rounded-full text-sm font-medium text-accent bg-accent-soft border border-accent/20 hover:border-accent/40 transition whitespace-nowrap inline-flex items-center gap-1.5"
     >
-      <ShieldCheck size={14} /> ผู้ดูแล
+      <ShieldCheck size={14} /> {label}
       {pending > 0 && (
         <span className="ml-0.5 min-w-4 h-4 px-1 inline-flex items-center justify-center rounded-full bg-accent text-white text-[10px] font-bold">
           {pending}

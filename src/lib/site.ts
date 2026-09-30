@@ -9,3 +9,13 @@ export const siteUrl = (
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : 'http://localhost:3005')
 ).replace(/\/$/, '')
+
+/** ลิงก์ hreflang บอก Google ว่าสองภาษานี้คือหน้าเดียวกัน */
+export function altLanguages(path: string) {
+  const p = path === '/' ? '' : path
+  return {
+    th: `${siteUrl}${p || '/'}`,
+    en: `${siteUrl}/en${p}`,
+    'x-default': `${siteUrl}${p || '/'}`,
+  }
+}

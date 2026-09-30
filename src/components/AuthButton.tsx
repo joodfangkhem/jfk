@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, LogOut, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { lp, t, type Locale } from '@/lib/i18n'
 
-export default function AuthButton() {
+export default function AuthButton({ locale = 'th' }: { locale?: Locale }) {
+  const d = t(locale)
   const supabase = createClient()
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
@@ -34,10 +36,10 @@ export default function AuthButton() {
   if (!email) {
     return (
       <Link
-        href="/login"
+        href={lp(locale, "/login")}
         className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-full bg-primary text-white text-sm font-medium active:scale-95 transition"
       >
-        เข้าสู่ระบบ
+        {d.auth.signIn}
       </Link>
     )
   }
@@ -48,14 +50,14 @@ export default function AuthButton() {
         <Link
           href="/favorites"
           className="h-9 w-9 inline-flex items-center justify-center rounded-full hover:bg-primary-soft text-primary"
-          aria-label="จุดที่บันทึกไว้"
+          aria-label={d.auth.saved}
         >
           <Heart size={18} />
         </Link>
         <button
           onClick={() => setOpen((v) => !v)}
           className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-primary-soft text-primary"
-          aria-label="บัญชีของฉัน"
+          aria-label={d.auth.account}
         >
           <User size={18} />
         </button>
@@ -68,14 +70,14 @@ export default function AuthButton() {
             onClick={() => setOpen(false)}
             className="block px-2 py-2 rounded-lg hover:bg-surface-2"
           >
-            จุดที่บันทึกไว้
+            {d.auth.saved}
           </Link>
           <Link
             href="/protocols"
             onClick={() => setOpen(false)}
             className="block px-2 py-2 rounded-lg hover:bg-surface-2"
           >
-            ชุดจุดของฉัน
+            {d.auth.protocols}
           </Link>
           <button
             onClick={async () => {
@@ -85,7 +87,7 @@ export default function AuthButton() {
             }}
             className="w-full text-left px-2 py-2 rounded-lg hover:bg-surface-2 flex items-center gap-2 text-accent"
           >
-            <LogOut size={15} /> ออกจากระบบ
+            <LogOut size={15} /> {d.auth.signOut}
           </button>
         </div>
       )}

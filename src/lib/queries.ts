@@ -2,7 +2,7 @@ import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
 import type { Condition, ConditionPoint, Meridian, Point } from '@/lib/types'
 
 const POINT_FIELDS =
-  'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, anatomy_th, functions_th, indications, point_types, needle_th, caution_th, species, is_common, verified, popularity, image_url, image_alt, image_credit'
+  'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, location_en, anatomy_th, anatomy_en, functions_th, functions_en, indications, indications_en, point_types, needle_th, needle_en, caution_th, caution_en, species, is_common, verified, popularity, image_url, image_alt, image_credit'
 
 export async function getMeridians(): Promise<Meridian[]> {
   if (!hasSupabase) return []
@@ -152,13 +152,14 @@ export async function getPointConditions(pointId: string) {
   if (!hasSupabase) return []
   const { data } = await supabasePublic
     .from('condition_points')
-    .select('role, note_th, conditions (slug, name_th, category)')
+    .select('role, note_th, note_en, conditions (slug, name_th, name_en, category)')
     .eq('point_id', pointId)
     .order('role')
   return (data ?? []) as unknown as {
     role: string
     note_th: string | null
-    conditions: { slug: string; name_th: string; category: string | null }
+    note_en: string | null
+    conditions: { slug: string; name_th: string; name_en: string | null; category: string | null }
   }[]
 }
 

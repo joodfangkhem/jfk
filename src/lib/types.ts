@@ -11,6 +11,7 @@ export type Meridian = {
   point_count: number | null
   peak_time: string | null
   summary_th: string | null
+  summary_en: string | null
   sort_order: number | null
 }
 
@@ -25,12 +26,18 @@ export type Point = {
   name_pinyin: string | null
   name_zh: string | null
   location_th: string
+  location_en: string | null
   anatomy_th: string | null
+  anatomy_en: string | null
   functions_th: string | null
+  functions_en: string | null
   indications: string[]
+  indications_en: string[]
   point_types: string[]
   needle_th: string | null
+  needle_en: string | null
   caution_th: string | null
+  caution_en: string | null
   species: string[]
   is_common: boolean
   verified: boolean
@@ -47,7 +54,9 @@ export type Condition = {
   name_en: string | null
   category: string | null
   summary_th: string | null
+  summary_en: string | null
   detail_th: string | null
+  detail_en: string | null
   species: string[]
   sort_order: number | null
 }
@@ -55,6 +64,7 @@ export type Condition = {
 export type ConditionPoint = {
   role: string
   note_th: string | null
+  note_en: string | null
   sort_order: number | null
   points: Point
 }
