@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { getAllPoints, getConditions, getMeridians } from '@/lib/queries'
+import { getAllPoints, getArticles, getConditions, getMeridians } from '@/lib/queries'
 import { siteUrl as base } from '@/lib/site'
 
 export const revalidate = 3600
@@ -15,11 +15,13 @@ function entry(path: string, priority: number, now: Date): MetadataRoute.Sitemap
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [points, meridians, conditions] = await Promise.all([
+  const [points, meridians, conditions, articles] = await Promise.all([
     getAllPoints(),
     getMeridians(),
     getConditions(),
+    getArticles(),
   ])
+  const hasCases = articles.some((a) => a.type === 'case')
   const now = new Date()
 
   return [
@@ -28,10 +30,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entry('/meridians', 0.8, now),
     ...entry('/conditions', 0.9, now),
     ...entry('/guide', 0.7, now),
+    ...(articles.length ? entry('/articles', 0.8, now) : []),
+    ...(hasCases ? entry('/cases', 0.8, now) : []),
     ...entry('/about', 0.4, now),
     ...entry('/privacy', 0.3, now),
     ...points.flatMap((p) => entry(`/points/${p.slug}`, p.is_common ? 0.8 : 0.6, now)),
     ...meridians.flatMap((m) => entry(`/meridians/${m.slug}`, 0.7, now)),
     ...conditions.flatMap((c) => entry(`/conditions/${c.slug}`, 0.8, now)),
+    ...articles.flatMap((a) => entry(`/articles/${a.slug}`, 0.7, now)),
   ]
 }

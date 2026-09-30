@@ -7,6 +7,7 @@ export default function SiteFooter({ locale }: { locale: Locale }) {
     { href: '/points', label: d.nav.points },
     { href: '/meridians', label: d.nav.meridians },
     { href: '/conditions', label: d.nav.conditions },
+    { href: '/articles', label: d.nav.articles },
     { href: '/guide', label: d.nav.guide },
     { href: '/about', label: d.footer.about },
     { href: '/privacy', label: d.footer.privacy },

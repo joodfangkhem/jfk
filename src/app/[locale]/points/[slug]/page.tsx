@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { AlertTriangle, MapPin, Sparkles, Syringe } from 'lucide-react'
 import AdSlot from '@/components/AdSlot'
+import ArticleCard from '@/components/ArticleCard'
 import AdminEditButton from '@/components/AdminEditButton'
 import FavoriteButton from '@/components/FavoriteButton'
 import NoteBox from '@/components/NoteBox'
@@ -15,6 +16,7 @@ import {
   getPoint,
   getPointConditions,
   getPointImages,
+  getArticlesForPoint,
   getRelatedPoints,
 } from '@/lib/queries'
 import { SPECIES_LABEL_I18N, isLocale, lp, pick, pickArr, t, type Locale } from '@/lib/i18n'
@@ -71,11 +73,12 @@ export default async function PointPage({
   const point = await getPoint(slug)
   if (!point) notFound()
 
-  const [meridians, conditions, related, images] = await Promise.all([
+  const [meridians, conditions, related, images, articles] = await Promise.all([
     getMeridians(),
     getPointConditions(point.id),
     getRelatedPoints(point.id),
     getPointImages(point.id),
+    getArticlesForPoint(point.id),
   ])
   const meridian = meridians.find((m) => m.code === point.meridian_code)
 
@@ -255,6 +258,18 @@ export default async function PointPage({
                   {pick(locale, c.note_th, c.note_en) ? ` · ${pick(locale, c.note_th, c.note_en)}` : ''}
                 </p>
               </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* บทความและเคสที่พูดถึงจุดนี้ */}
+      {articles.length > 0 && (
+        <section>
+          <h2 className="text-lg font-bold mb-3">{d.article.onPoint}</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {articles.map((a) => (
+              <ArticleCard key={a.id} article={a} locale={locale} />
             ))}
           </div>
         </section>

@@ -12,6 +12,7 @@ export default function SiteHeader({ locale }: { locale: Locale }) {
     { href: '/points', label: d.nav.points },
     { href: '/meridians', label: d.nav.meridians },
     { href: '/conditions', label: d.nav.conditions },
+    { href: '/articles', label: d.nav.articles },
     { href: '/guide', label: d.nav.guide },
   ]
 

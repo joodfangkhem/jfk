@@ -1,5 +1,5 @@
 import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
-import type { Condition, ConditionPoint, Meridian, Point } from '@/lib/types'
+import type { Article, Condition, ConditionPoint, Meridian, Point } from '@/lib/types'
 
 const POINT_FIELDS =
   'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, location_en, anatomy_th, anatomy_en, functions_th, functions_en, indications, indications_en, point_types, point_types_en, needle_th, needle_en, caution_th, caution_en, species, is_common, verified, popularity, image_url, image_alt, image_credit'
@@ -190,4 +190,60 @@ export async function getRelatedPoints(pointId: string, limit = 6): Promise<Poin
     .sort((a, b) => b.n - a.n || b.point.popularity - a.point.popularity)
     .slice(0, limit)
     .map((v) => v.point)
+}
+
+// ---------------------------------------------------------------- บทความ / เคส
+
+const ARTICLE_FIELDS =
+  'id, slug, type, status, title_th, title_en, excerpt_th, excerpt_en, body_th, body_en, cover_url, cover_alt, published_at, updated_at, ' +
+  'authors (id, name_th, name_en, credential, license_no, school, class_year, bio_th, bio_en, avatar_url), ' +
+  'article_cases (pet_name, species, breed, sex, age_text, owner_display, disclosure, complaint, diagnosis, sessions, outcome)'
+
+/** type ว่างไว้ = เอาทั้งบทความและเคส */
+export async function getArticles(type?: 'article' | 'case'): Promise<Article[]> {
+  if (!hasSupabase) return []
+  let q = supabasePublic
+    .from('articles')
+    .select(ARTICLE_FIELDS)
+    .eq('status', 'published')
+    .order('published_at', { ascending: false, nullsFirst: false })
+  if (type) q = q.eq('type', type)
+  const { data } = await q
+  return (data ?? []) as unknown as Article[]
+}
+
+export async function getArticle(slug: string): Promise<Article | null> {
+  if (!hasSupabase) return null
+  const { data } = await supabasePublic
+    .from('articles')
+    .select(ARTICLE_FIELDS)
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle()
+  return (data as unknown as Article) ?? null
+}
+
+/** บทความและเคสที่พูดถึงจุดนี้ — โชว์ท้ายหน้าจุด */
+export async function getArticlesForPoint(pointId: string): Promise<Article[]> {
+  if (!hasSupabase) return []
+  const { data } = await supabasePublic
+    .from('article_points')
+    .select(`articles!inner (${ARTICLE_FIELDS})`)
+    .eq('point_id', pointId)
+  const rows = (data ?? []) as unknown as { articles: Article }[]
+  return rows
+    .map((r) => r.articles)
+    .filter((a) => a && a.status === 'published')
+    .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
+}
+
+/** จุดจากรหัส เอาไว้ทำชิป "จุดที่พูดถึงในบทความนี้" */
+export async function getPointsByCodes(codes: string[]): Promise<Point[]> {
+  if (!hasSupabase || codes.length === 0) return []
+  const { data } = await supabasePublic
+    .from('points')
+    .select(POINT_FIELDS)
+    .in('code', codes)
+    .order('code')
+  return data ?? []
 }

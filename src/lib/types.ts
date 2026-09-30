@@ -96,3 +96,49 @@ export const CATEGORY_LABEL: Record<string, string> = {
   behavior: 'พฤติกรรม',
   other: 'อื่นๆ',
 }
+
+export type Author = {
+  id: string
+  name_th: string
+  name_en: string | null
+  credential: string | null
+  license_no: string | null
+  school: string | null
+  class_year: string | null
+  bio_th: string | null
+  bio_en: string | null
+  avatar_url: string | null
+}
+
+export type ArticleCase = {
+  pet_name: string | null
+  species: string | null
+  breed: string | null
+  sex: string | null
+  age_text: string | null
+  owner_display: string | null
+  disclosure: 'full' | 'masked' | 'anonymous'
+  complaint: string | null
+  diagnosis: string | null
+  sessions: string | null
+  outcome: string | null
+}
+
+export type Article = {
+  id: string
+  slug: string
+  type: 'article' | 'case'
+  status: 'draft' | 'published'
+  title_th: string
+  title_en: string | null
+  excerpt_th: string | null
+  excerpt_en: string | null
+  body_th: string
+  body_en: string | null
+  cover_url: string | null
+  cover_alt: string | null
+  published_at: string | null
+  updated_at: string
+  authors: Author | null
+  article_cases: ArticleCase | null
+}
