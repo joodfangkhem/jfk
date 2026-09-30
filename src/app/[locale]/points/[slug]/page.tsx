@@ -152,7 +152,7 @@ export default async function PointPage({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <FavoriteButton pointId={point.id} code={point.code} />
+          <FavoriteButton pointId={point.id} code={point.code} slug={point.slug} locale={locale} />
           <AdminEditButton slug={point.slug} />
         </div>
       </header>
@@ -224,12 +224,12 @@ export default async function PointPage({
         </section>
       )}
 
-      <NoteBox pointId={point.id} code={point.code} />
+      <NoteBox pointId={point.id} slug={point.slug} locale={locale} />
 
       <PhotoSubmit
         pointId={point.id}
-        code={point.code}
         slug={point.slug}
+        locale={locale}
         hasImage={images.length > 0}
         imageCount={images.length}
       />
