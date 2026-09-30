@@ -66,7 +66,12 @@ export default async function AdminPointPage({
         {d.admin.editHeading} <span className="text-primary">{point.code}</span>{' '}
         {pick(locale, point.name_th, point.name_en)}
       </h1>
-      <VerifyToggle pointId={point.id} verified={point.verified} locale={locale} />
+      <VerifyToggle
+        pointId={point.id}
+        verified={point.verified}
+        source={point.verified_source}
+        locale={locale}
+      />
       <PointGalleryManager pointId={point.id} slug={point.slug} locale={locale} />
       <PointEditor point={point as Point} locale={locale} />
     </main>

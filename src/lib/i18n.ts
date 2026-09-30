@@ -187,6 +187,10 @@ const th = {
     verifiedToast: 'ทำเครื่องหมายว่าตรวจแล้ว',
     unverifiedToast: 'กลับเป็นรอตรวจสอบ',
     editButton: 'แก้ไข / ใส่รูป',
+    source: 'ตรวจกับแหล่งอ้างอิง',
+    sourcePlaceholder: "เช่น Xie's Veterinary Acupuncture (2007) p.148",
+    sourceSaved: 'บันทึกแหล่งอ้างอิงแล้ว',
+    sourceHint: 'ระบุเล่มและหน้าที่ใช้เทียบ จะได้ย้อนกลับไปดูได้ว่าตรวจจากอะไร',
   },
   editor: {
     nameTh: 'ชื่อไทย',
@@ -489,6 +493,10 @@ const en: typeof th = {
     verifiedToast: 'Marked as verified',
     unverifiedToast: 'Back to needs review',
     editButton: 'Edit / Add Photo',
+    source: 'Checked against',
+    sourcePlaceholder: "e.g. Xie's Veterinary Acupuncture (2007) p.148",
+    sourceSaved: 'Source saved',
+    sourceHint: 'Name the book and page used, so it can be traced back later.',
   },
   editor: {
     nameTh: 'Thai name',
