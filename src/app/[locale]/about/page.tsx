@@ -44,10 +44,20 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             </p>
             <p>
               <strong>Where the data comes from:</strong> locations follow the transpositional system
-              taught in the international veterinary acupuncture curricula (IVAS / Chi Institute), which
-              maps human point locations onto animal anatomy. Texts differ slightly from one another, so
-              always confirm the landmarks by palpation. Points marked <em>Needs Review</em> are ones
-              rarely used in animals, where the transposition is much less standardised.
+              taught in the international veterinary acupuncture curricula, which maps human point
+              locations onto animal anatomy. The first draft of this reference was written with AI
+              assistance. It has since been checked line by line against a textbook — all 371 points
+              — and 244 of them had their location or needling technique corrected as a result.
+            </p>
+            <p>
+              <strong>What it was checked against:</strong> Xie&rsquo;s Veterinary Acupuncture (2007) and
+              the Chi University (formerly Chi Institute) course material, which is the lineage the author
+              trained in. That is a single lineage: other schools — IVAS, the European texts, the
+              original Chinese veterinary literature — may place a point differently or list different
+              indications, and this is especially true of the classical animal points, where no two texts
+              select quite the same set. Confirm the landmarks by palpation every time, and check your own
+              reference before you needle. Points marked <em>Needs Review</em> are ones rarely used in
+              animals, where the transposition is much less standardised.
             </p>
             <p>
               <strong>Photographs:</strong> we are photographing real cases point by point. Signed-in
@@ -73,8 +83,20 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             </p>
             <p>
               <strong>ที่มาของข้อมูล:</strong> ตำแหน่งจุดอ้างอิงระบบ transpositional ที่ใช้ในหลักสูตร
-              สัตวแพทย์ฝังเข็มสากล (IVAS / Chi Institute) ซึ่งแปลงตำแหน่งจุดของมนุษย์มาสู่กายวิภาคสัตว์
-              ทั้งนี้ตำราแต่ละสำนักระบุตำแหน่งคลาดเคลื่อนกันได้เล็กน้อย จึงควรคลำยืนยัน landmark จริงทุกครั้ง
+              สัตวแพทย์ฝังเข็มสากล ซึ่งแปลงตำแหน่งจุดของมนุษย์มาสู่กายวิภาคสัตว์
+              เนื้อหาชุดแรกของเว็บนี้ร่างขึ้นด้วยความช่วยเหลือของ AI
+              หลังจากนั้นได้ตรวจทานเทียบตำราทีละจุดครบทั้ง 371 จุด
+              และแก้ไขตำแหน่งหรือเทคนิคการปักไป 244 จุด
+            </p>
+            <p>
+              <strong>ตำราที่ใช้ตรวจทาน:</strong> Xie&rsquo;s Veterinary Acupuncture (2007)
+              และเอกสารหลักสูตรของ Chi University (เดิมชื่อ Chi Institute)
+              ซึ่งเป็นสายที่ผู้เขียนเรียนมาโดยตรง
+              ขอให้ทราบว่านี่คือ<strong>สายเดียว</strong> — ตำราสำนักอื่น ทั้ง IVAS
+              ตำราสายยุโรป หรือตำราสัตวแพทย์จีนต้นฉบับ
+              อาจระบุตำแหน่งหรือข้อบ่งใช้ต่างไปได้
+              โดยเฉพาะจุดคลาสสิกของสัตว์ ที่แต่ละเล่มเลือกจุดไม่เหมือนกันเลย
+              จึงควรคลำยืนยัน landmark จริงทุกครั้ง และเทียบกับตำราที่ท่านใช้ก่อนลงเข็ม
               จุดที่ติดป้าย <em>รอตรวจสอบ</em> คือจุดที่ใช้ไม่บ่อยในสัตว์ ซึ่งตำแหน่งยิ่งไม่ได้มาตรฐาน
             </p>
             <p>
