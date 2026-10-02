@@ -7,7 +7,7 @@ select * from (
          count(*)::text as ค่าจริง, '381' as ควรเป็น from points
   union all
   select 2, 'ยังใช้หน่วย ซม.',
-         count(*)::text, '0' from points where needle_th like '%ซม.%'
+         count(*)::text, '1 (BA-FENG จุดของคน)' from points where needle_th like '%ซม.%'
   union all
   select 3, 'ยังติดธงรอตรวจสอบ',
          count(*)::text, '0' from points where not verified
