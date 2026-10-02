@@ -4,7 +4,7 @@
 -- ======================================================================
 select * from (
   select 1 as ลำดับ, 'จุดทั้งหมด' as รายการ,
-         count(*)::text as ค่าจริง, '371' as ควรเป็น from points
+         count(*)::text as ค่าจริง, '381' as ควรเป็น from points
   union all
   select 2, 'ยังใช้หน่วย ซม.',
          count(*)::text, '0' from points where needle_th like '%ซม.%'
@@ -33,7 +33,7 @@ select * from (
          count(*)::text, '2' from points where code in ('JING-JIA-JI','WEI-JIE')
   union all
   select 10, 'จุดที่ไม่มีหน่วย cun ในเทคนิค',
-         coalesce(string_agg(code, ', ' order by code), 'ไม่มี'), 'CV-8, CV-9'
+         coalesce(string_agg(code, ', ' order by code), 'ไม่มี'), 'BA-FENG, CV-8, CV-9'
          from points where needle_th is null or needle_th not like '%cun%'
   union all
   select 11, 'KID-12 / KID-13 มีคำเตือนกระเพาะปัสสาวะ',
