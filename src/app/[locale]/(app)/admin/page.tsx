@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Inbox, ShieldCheck } from 'lucide-react'
+import { FileText, Inbox, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 
@@ -127,6 +127,14 @@ on conflict (user_id) do nothing;`}
         ) : (
           <span className="chip">{d.admin.inboxEmpty}</span>
         )}
+      </Link>
+
+      <Link
+        href={lp(locale, '/admin/articles')}
+        className="card p-3.5 flex items-center gap-3 hover:border-primary/50 transition"
+      >
+        <FileText size={18} className="text-primary shrink-0" />
+        <span className="flex-1 text-sm font-medium">{d.artAdmin.title}</span>
       </Link>
 
       <form className="flex gap-2">
