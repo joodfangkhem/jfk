@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { resizeImage } from '@/lib/resizeImage'
 import { extractPointCodes } from '@/lib/markdown'
 import { lp, t, type Locale } from '@/lib/i18n'
+import { refreshArticlePages } from '@/app/[locale]/(app)/admin/articles/actions'
 
 export type EditorArticle = {
   id: string
@@ -168,6 +169,9 @@ export default function ArticleEditor({
             .insert(pts.map((p) => ({ article_id: a.id, point_id: p.id })))
         }
       }
+
+      // หน้าสาธารณะเป็น ISR และการบันทึกนี้ไม่ผ่านเซิร์ฟเวอร์ จึงต้องสั่งล้างแคชเอง
+      await refreshArticlePages(a.id, a.slug.trim())
 
       toast.success(d.saved)
       router.refresh()

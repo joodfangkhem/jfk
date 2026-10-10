@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { supabasePublic } from '@/lib/supabase/public'
 import { isLocale, lp, type Locale } from '@/lib/i18n'
 
 function localeOf(formData: FormData): Locale {
@@ -63,4 +64,30 @@ export async function deleteArticle(formData: FormData) {
 
   revalidatePath(`/${locale}/admin/articles`)
   redirect(lp(locale, '/admin/articles'))
+}
+
+/**
+ * ArticleEditor บันทึกจากเบราว์เซอร์ตรงเข้า Supabase จึงไม่มี server action
+ * ตัวไหนทำงาน และหน้าสาธารณะที่เป็น ISR จะค้างแคชไว้จนครบชั่วโมง
+ * ฟังก์ชันนี้ให้ editor เรียกหลังบันทึกสำเร็จ เพื่อล้างแคชเฉพาะหน้าที่เกี่ยวข้อง
+ * ต้องใช้ path ของ route จริงที่มี /th หรือ /en นำหน้า ไม่ใช่ URL ที่ผู้ใช้เห็น
+ */
+export async function refreshArticlePages(articleId: string, slug: string) {
+  for (const l of ['th', 'en'] as const) {
+    revalidatePath(`/${l}/articles`)
+    if (slug) revalidatePath(`/${l}/articles/${slug}`)
+    revalidatePath(`/${l}/admin/articles`)
+  }
+
+  // บทความโผล่ท้ายหน้าจุดที่ถูกอ้างถึงด้วย จึงต้องล้างหน้าจุดพวกนั้นด้วย
+  const { data } = await supabasePublic
+    .from('article_points')
+    .select('points(slug)')
+    .eq('article_id', articleId)
+
+  for (const row of data ?? []) {
+    const ps = (row as { points?: { slug?: string } | null }).points?.slug
+    if (!ps) continue
+    for (const l of ['th', 'en'] as const) revalidatePath(`/${l}/points/${ps}`)
+  }
 }
