@@ -22,6 +22,15 @@ function isBypassed(pathname: string) {
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // apex เป็นตัวหลัก www ส่งต่อถาวร — ของเดิม Vercel ทำให้ที่ edge
+  // sitemap กับ canonical ชี้ apex ทั้งหมด ถ้าปล่อยให้ www เสิร์ฟเองจะกลายเป็นเนื้อหาซ้ำ
+  const host = request.headers.get('host') ?? ''
+  if (host.startsWith('www.')) {
+    const url = new URL(request.url)
+    url.host = host.slice(4)
+    return NextResponse.redirect(url, 301)
+  }
   if (isBypassed(pathname)) return NextResponse.next()
 
   const isEn = pathname === '/en' || pathname.startsWith('/en/')

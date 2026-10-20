@@ -12,9 +12,12 @@ const configured =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : '')
 
-if (!configured && process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' && !/^https:\/\//.test(configured)) {
+  // ดักทั้งกรณีไม่ได้ตั้ง และกรณีตั้งเป็น localhost ซึ่งเจ็บกว่า เพราะ build ผ่านเงียบ ๆ
+  // แล้วส่ง canonical กับ sitemap ที่ชี้ localhost ออกไปให้ Google ทั้งเว็บ
   throw new Error(
-    'ยังไม่ได้ตั้ง NEXT_PUBLIC_SITE_URL — ต้องใส่โดเมนจริง (เช่น https://joodfangkhem.com) ก่อน build'
+    `NEXT_PUBLIC_SITE_URL ต้องเป็น https ของโดเมนจริง (เช่น https://joodfangkhem.com) แต่ได้ ${configured || '(ว่าง)'} — ` +
+      'ถ้า build จากเครื่องตัวเอง ให้ลบบรรทัดนี้ออกจาก .env.local แล้วปล่อยให้ .env.production ทำงาน'
   )
 }
 
