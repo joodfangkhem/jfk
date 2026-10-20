@@ -4,7 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 /** หน้าที่ต้องล็อกอิน — ที่เหลือเปิดให้อ่านฟรี (ดีต่อ SEO/AdSense) */
 const PROTECTED = ['/favorites', '/protocols', '/admin']
 
-/** ไฟล์และ route ที่ไม่ต้องเติม prefix ภาษา */
+/**
+ * ตาข่ายกันพลาดชั้นสอง — ตัวคัดจริงอยู่ที่ `config.matcher` ท้ายไฟล์
+ * ที่เหลือไว้เพราะ matcher ของ Next ต้องเป็นค่าคงที่ แก้ยากกว่าตอนเพิ่ม route ใหม่
+ */
 function isBypassed(pathname: string) {
   return (
     pathname.startsWith('/_next') ||
@@ -75,5 +78,14 @@ async function requireUser(request: NextRequest, isEn: boolean, bare: string) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image).*)'],
+  /*
+   * ปลุกฟังก์ชันเฉพาะ request ที่เป็นหน้าเว็บจริง ๆ
+   * ไฟล์สแตติก ไฟล์ที่มีนามสกุล และ /api ถูกคัดออกตั้งแต่ชั้น matcher
+   * ซึ่งสำคัญกว่าที่คิด เพราะ isBypassed() ด้านบนทำงาน "หลัง" ฟังก์ชันถูกปลุกแล้ว
+   * = จ่ายค่า CPU ไปเรียบร้อยก่อนจะรู้ว่าไม่ต้องทำอะไร
+   */
+  matcher: [
+    '/((?!_next/static|_next/image|api/|favicon\\.ico|robots\\.txt|sitemap\\.xml|ads\\.txt|.*\\.[a-zA-Z0-9]+$).*)',
+  ],
 }
+

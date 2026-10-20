@@ -4,7 +4,8 @@ import { getConditions } from '@/lib/queries'
 import { CATEGORY_LABEL_I18N, isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 import { altLanguages } from '@/lib/site'
 
-export const revalidate = 3600
+// หน้ารวม: แคช 1 วัน พอให้รายการใหม่ขึ้นเองโดยไม่ต้อง regenerate ทุกชั่วโมง
+export const revalidate = 86400
 
 export async function generateMetadata({
   params,

@@ -15,7 +15,8 @@ import {
 import { altLanguages, siteUrl } from '@/lib/site'
 import { extractPointCodes, plainText, readingMinutes, renderMarkdown } from '@/lib/markdown'
 
-export const revalidate = 3600
+// เนื้อหาแทบไม่เปลี่ยน แคช 7 วัน แล้วให้แอดมินสั่ง revalidate เองตอนแก้ (lib/revalidate.ts)
+export const revalidate = 604800
 
 export async function generateStaticParams() {
   const articles = await getArticles()

@@ -5,16 +5,19 @@ import { useRouter } from 'next/navigation'
 import { BadgeCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { revalidatePoint } from '@/lib/revalidate'
 import { t, type Locale } from '@/lib/i18n'
 
 /** ปุ่มให้แอดมินยืนยันว่าตรวจข้อมูลจุดนี้กับตำราแล้ว พร้อมบันทึกว่าตรวจกับเล่มไหนหน้าไหน */
 export default function VerifyToggle({
   pointId,
+  slug,
   verified,
   source,
   locale = 'th',
 }: {
   pointId: string
+  slug: string
   verified: boolean
   source?: string | null
   locale?: Locale
@@ -31,8 +34,12 @@ export default function VerifyToggle({
     const next = !on
     // trigger ฝั่งฐานข้อมูลเป็นคนประทับ verified_at และล้างแหล่งอ้างอิงเมื่อถอนยืนยัน
     const { error } = await supabase.from('points').update({ verified: next }).eq('id', pointId)
+    if (error) {
+      setBusy(false)
+      return toast.error(error.message)
+    }
+    await revalidatePoint(slug)
     setBusy(false)
-    if (error) return toast.error(error.message)
     setOn(next)
     if (!next) setSrc('')
     router.refresh()
@@ -47,6 +54,7 @@ export default function VerifyToggle({
       .update({ verified_source: value || null })
       .eq('id', pointId)
     if (error) return toast.error(error.message)
+    await revalidatePoint(slug)
     router.refresh()
     toast.success(d.sourceSaved)
   }

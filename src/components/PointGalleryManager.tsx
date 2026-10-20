@@ -5,6 +5,7 @@ import { ImagePlus, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImage } from '@/lib/resizeImage'
+import { revalidatePoint } from '@/lib/revalidate'
 import { t, type Locale } from '@/lib/i18n'
 
 type Img = {
@@ -94,6 +95,8 @@ export default function PointGalleryManager({
       await supabase.rpc('set_primary_point_image', { img_id: row.id })
     }
     await load()
+    // หน้าจุดฝั่ง public แคชยาว ต้องสะกิดให้สร้างใหม่ทุกครั้งที่รูปเปลี่ยน
+    await revalidatePoint(slug)
     setBusy(false)
     toast.success(d.added)
   }
@@ -102,6 +105,7 @@ export default function PointGalleryManager({
     setBusy(true)
     const { error } = await supabase.rpc('set_primary_point_image', { img_id: id })
     await load()
+    if (!error) await revalidatePoint(slug)
     setBusy(false)
     if (error) toast.error(error.message)
     else toast.success(d.primarySet)
@@ -114,6 +118,7 @@ export default function PointGalleryManager({
       await supabase.storage.from('point-images').remove([img.storage_path])
     }
     await load()
+    if (!error) await revalidatePoint(slug)
     setBusy(false)
     if (error) toast.error(error.message)
     else toast.success(d.removed)
@@ -129,6 +134,7 @@ export default function PointGalleryManager({
     const img = images.find((i) => i.id === id)
     if (!error && img?.is_primary) await supabase.rpc('set_primary_point_image', { img_id: id })
     await load()
+    if (!error) await revalidatePoint(slug)
     setBusy(false)
     if (error) toast.error(error.message)
     else toast.success(d.saved)

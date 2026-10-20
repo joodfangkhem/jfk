@@ -8,14 +8,23 @@ import { getMeridians, searchPoints } from '@/lib/queries'
 import { SPECIES_LABEL_I18N, isLocale, lp, t, type Locale } from '@/lib/i18n'
 import { altLanguages } from '@/lib/site'
 
+type SP = { q?: string; species?: string; meridian?: string }
+
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>
+  searchParams: Promise<SP>
 }): Promise<Metadata> {
   const { locale: raw } = await params
   const locale: Locale = isLocale(raw) ? raw : 'th'
+  const sp = await searchParams
+  // หน้าที่มีตัวกรองคือมุมมองซ้ำของหน้าเดียวกัน ไม่มีค่าพอให้ index
+  // และยิ่งปล่อยให้บอทไล่เก็บยิ่งเผา CPU เพราะ route นี้แคชไม่ได้
+  const filtered = Boolean(sp.q || sp.species || sp.meridian)
   return {
+    robots: filtered ? { index: false, follow: false } : undefined,
     alternates: { canonical: lp(locale, '/points'), languages: altLanguages('/points') },
     title: locale === 'en' ? 'Search Acupuncture Points' : 'ค้นหาจุดฝังเข็ม',
     description:
@@ -24,8 +33,6 @@ export async function generateMetadata({
         : 'ค้นหาจุดฝังเข็มในสัตว์จากรหัสจุด ชื่อจีน ชื่อไทย ตำแหน่ง หรืออาการ กรองตามชนิดสัตว์และเส้นลมปราณได้',
   }
 }
-
-type SP = { q?: string; species?: string; meridian?: string }
 
 export default async function PointsPage({
   params,
@@ -129,6 +136,7 @@ function FilterChip({
   return (
     <Link
       href={href}
+      rel="nofollow"
       className={`px-3 py-1.5 rounded-full text-xs font-medium border whitespace-nowrap transition ${
         active
           ? 'bg-primary text-white border-primary'

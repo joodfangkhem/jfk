@@ -68,6 +68,7 @@ export default async function AdminPointPage({
       </h1>
       <VerifyToggle
         pointId={point.id}
+        slug={point.slug}
         verified={point.verified}
         source={point.verified_source}
         locale={locale}

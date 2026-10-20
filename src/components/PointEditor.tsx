@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { revalidatePoint } from '@/lib/revalidate'
 import { t, type Locale } from '@/lib/i18n'
 import type { Point } from '@/lib/types'
 
@@ -44,9 +45,13 @@ export default function PointEditor({ point, locale = 'th' }: { point: Point; lo
         caution_th: form.caution_th || null,
       })
       .eq('id', point.id)
-    setBusy(false)
-    if (error) toast.error(d.failed + error.message)
-    else {
+    if (error) {
+      setBusy(false)
+      toast.error(d.failed + error.message)
+    } else {
+      // หน้า public แคช 7 วัน ต้องสะกิดให้สร้างใหม่ ไม่งั้นที่แก้จะยังไม่ขึ้น
+      await revalidatePoint(point.slug)
+      setBusy(false)
       toast.success(d.saved)
       router.refresh()
     }

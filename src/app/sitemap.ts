@@ -2,7 +2,8 @@ import type { MetadataRoute } from 'next'
 import { getAllPoints, getArticles, getConditions, getMeridians } from '@/lib/queries'
 import { siteUrl as base } from '@/lib/site'
 
-export const revalidate = 3600
+// หน้ารวม: แคช 1 วัน พอให้รายการใหม่ขึ้นเองโดยไม่ต้อง regenerate ทุกชั่วโมง
+export const revalidate = 86400
 
 /** หนึ่งหน้า = สองรายการ (ไทย/อังกฤษ) พร้อม hreflang บอกว่าเป็นหน้าเดียวกัน */
 function entry(path: string, priority: number, now: Date): MetadataRoute.Sitemap {

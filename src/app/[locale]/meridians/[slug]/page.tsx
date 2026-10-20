@@ -7,7 +7,8 @@ import { getMeridian, getMeridians, getPointsByMeridian } from '@/lib/queries'
 import { ELEMENT_LABEL_I18N, isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 import { altLanguages } from '@/lib/site'
 
-export const revalidate = 3600
+// เนื้อหาแทบไม่เปลี่ยน แคช 7 วัน แล้วให้แอดมินสั่ง revalidate เองตอนแก้ (lib/revalidate.ts)
+export const revalidate = 604800
 
 export async function generateStaticParams() {
   const meridians = await getMeridians()
