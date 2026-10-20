@@ -1,108 +1,77 @@
-# ย้าย JFK จาก Vercel ไป Cloudflare Workers
+# JFK บน Cloudflare Workers
 
-> เขียนไว้ตอน 2026-10-20 ตอนที่ Vercel พักโปรเจกต์เพราะ Hobby Fluid Active CPU เกิน 4 ชม./เดือน
-> (joodfangkhem.com ตอบ 402 `DEPLOYMENT_DISABLED` พักถึง 11 พ.ย. 2026)
+ย้ายจาก Vercel มาเสร็จ **2026-10-20** หลัง Vercel พักโปรเจกต์เพราะ Hobby Fluid Active CPU
+เกิน 4 ชม./เดือน (เว็บตอบ 402 `DEPLOYMENT_DISABLED` ตั้งแต่ 12 ต.ค. พักถึง 11 พ.ย.)
 
-ของที่อยู่ในโค้ดแล้ว: `wrangler.jsonc`, `open-next.config.ts`, `public/_headers`,
-`initOpenNextCloudflareForDev()` ท้าย `next.config.ts` และสคริปต์ `preview` / `deploy` / `cf-typegen`
-ทดสอบบน workerd ในเครื่องผ่านแล้ว (หน้าจุด, rewrite ไทย, redirect KI→KID, login guard, ค้นหา)
+**LIVE: https://joodfangkhem.com** · `www` → 301 → apex
 
-เหลือเฉพาะขั้นที่ต้องใช้บัญชี ทำตามลำดับนี้
+## ของที่ตั้งไว้ตรงไหน
 
-## 1. บัญชี Cloudflare
-
-สมัคร/ล็อกอินด้วย **joodfangkhem@gmail.com** (บัญชีเดียวกับ GitHub/Supabase ของโปรเจกต์นี้)
-แล้วที่เครื่อง:
-
-```bash
-cd ~/Project/jfk && npx wrangler login
-```
-
-## 2. เปิด R2 แล้วสร้าง bucket
-
-Dashboard → R2 → เปิดใช้งาน (Cloudflare จะขอผูกบัตรไว้ แม้จะใช้ในโควตาฟรี 10 GB ก็ตาม)
-แล้วสร้าง bucket ชื่อ **`jfk-cache`** (ชื่อนี้ถูกอ้างใน `wrangler.jsonc` แล้ว ถ้าตั้งชื่ออื่นต้องแก้ไฟล์ตาม)
-
-หรือสั่งจากเครื่องหลังล็อกอิน:
-
-```bash
-npx wrangler r2 bucket create jfk-cache
-```
-
-bucket นี้คือที่เก็บหน้า ISR ที่สร้างไว้แล้ว ถ้าไม่มี หน้าทุกหน้าจะถูก render ใหม่ทุกคำขอ
-= กลับไปเจอปัญหาเดิมที่ทำให้ Vercel พักโปรเจกต์
-
-## 3. ต่อ GitHub ให้ auto-deploy
-
-Workers & Pages → Create → Workers → Import a repository → `joodfangkhem/jfk`
-
-| ช่อง | ค่า |
+| | ค่า |
 |---|---|
-| Build command | `npx opennextjs-cloudflare build` |
-| Deploy command | `npx wrangler deploy` |
-| Branch | `main` |
+| บัญชี Cloudflare | `joodfangkhem@gmail.com` · account `b2b4963d5c312a0eb5796b29153bf6fc` |
+| Worker | `jfk` · subdomain `joodfangkhem` (workers.dev ปิดไว้ ไม่ให้ Google เก็บซ้ำ) |
+| ISR cache | R2 bucket `jfk-cache` |
+| โดเมน | ประกาศใน `wrangler.jsonc` → `routes` ไม่ใช่กดในแดชบอร์ด |
+| DNS | ย้ายมาที่ Cloudflare (`carter` / `olga.ns.cloudflare.com`) โดเมนยังจดที่ Z.com |
+| auto-deploy | Workers Builds ← `joodfangkhem/jfk` branch `main` |
 
-### ตัวแปรที่ต้องใส่ในหน้า build settings
-
-Next ฝังค่า `NEXT_PUBLIC_*` ตั้งแต่ตอน build ไม่ใช่ตอนรัน และ `.env.local` ไม่ได้อยู่ใน git
-ถ้าไม่ใส่ตรงนี้ เว็บจะ build ผ่านแต่ต่อ Supabase ไม่ได้ (หรือ build พังที่ guard ของ `src/lib/site.ts`)
+### Build settings (Cloudflare → Settings → Build)
 
 ```
-NEXT_PUBLIC_SITE_URL=https://joodfangkhem.com
-NEXT_PUBLIC_SUPABASE_URL=https://urkjxixuxxubdqymugqo.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key จาก .env.local>
-NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-4390416763222463
-NEXT_PUBLIC_ADSENSE_SLOT_HOME=2916049703
-NEXT_PUBLIC_ADSENSE_SLOT_LIST=3571579266
-NEXT_PUBLIC_ADSENSE_SLOT_POINT=7976804696
-NEXT_PUBLIC_ADSENSE_SLOT_CONDITION=6663723023
-NEXT_PUBLIC_ADSENSE_SLOT_GUIDE=3380007574
+Build command   npx opennextjs-cloudflare build
+Deploy command  npx opennextjs-cloudflare deploy
 ```
 
-## 4. ย้ายโดเมนมาที่ Cloudflare
+**ห้ามใช้ `npx wrangler deploy`** ที่ Cloudflare เสนอให้เป็นค่าเริ่มต้น — เอกสาร OpenNext บอกชัดว่า
+อย่าเรียก wrangler เอง เพราะ `opennextjs-cloudflare deploy` จะยัดหน้า ISR ลง R2 ก่อนแล้วค่อย deploy
+ถ้าใช้ตัวเปล่า bucket จะว่าง ทุกหน้าถูก render ใหม่ตอนคนเข้าครั้งแรก = ยกปัญหาที่ทำให้ Vercel
+พักโปรเจกต์มาไว้ที่ Cloudflare ทั้งดุ้น
 
-DNS ของ joodfangkhem.com ตอนนี้อยู่ที่ Z.com ค่าที่มีจริง ณ 2026-10-20:
+Build variables 8 ตัว (Supabase 2 + AdSense 6) ใส่เป็น **Variable ไม่ใช่ Secret**
+เพราะเป็นค่าสาธารณะที่ถูกฝังในไฟล์ JS อยู่แล้ว และ Secret จะเปิดดูย้อนหลังไม่ได้
+**`NEXT_PUBLIC_SITE_URL` ไม่ต้องใส่** อยู่ใน `.env.production` ในรีโปแล้ว
 
-| ชนิด | ชื่อ | ค่า | ทำอย่างไร |
-|---|---|---|---|
-| A | `@` | `216.198.79.1` | ของ Vercel — **ลบทิ้ง** หลังต่อ Worker แล้ว |
-| CNAME | `www` | `d6470827c2475dc8.vercel-dns-017.com` | ของ Vercel — **ลบทิ้ง** |
-| TXT | `@` | `google-site-verification=uaDncjwV6lhBNB8gcsLYiM7pq16HkOZEyQJ20AM5m-c` | **ต้องเก็บไว้** ไม่งั้น Search Console หลุดการยืนยัน |
+## กับดักที่เจอมาแล้ว (อย่าเหยียบซ้ำ)
 
-ไม่มี MX (โดเมนนี้ไม่ได้ใช้รับอีเมล) และไม่มี CAA จึงไม่มีอย่างอื่นให้ห่วง
+**1. บัญชีใหม่ยังไม่มี workers.dev subdomain** — deploy ค้าง 11 นาทีแล้วพัง error 10063
+adapter สร้าง worker ชั่วคราว `open-next-cache-populate` เพื่อยัด cache ซึ่งต้องมี subdomain ก่อน
+แก้ด้วยการเปิดหน้า Workers ในแดชบอร์ดครั้งแรกให้ Cloudflare สร้างให้
 
-ลำดับ:
+**2. `.env.local` ทับ `.env.production` เสมอ** — deploy จากเครื่องแล้วได้ canonical กับ sitemap
+ทั้ง 854 URL ชี้ `localhost:3005` ทั้งที่ build ผ่านปกติ ตอนนี้ `src/lib/site.ts` บังคับว่า
+production ต้องเป็น https เท่านั้น ไม่งั้น build พัง — **ให้ deploy ผ่าน CI เป็นหลัก** เพราะ CI สะอาด
 
-1. Cloudflare → Add a site → `joodfangkhem.com` → แผน Free
-2. ตอน import ให้ตรวจว่า **TXT ของ google-site-verification ติดมาด้วย** ถ้าไม่มาให้เพิ่มเอง
-3. เอา nameserver ที่ Cloudflare ให้ (`xxx.ns.cloudflare.com` สองตัว) ไปใส่ที่ Z.com
-   — **เมนู DNS บนแถบบน** ไม่ใช่หน้า "ตั้งค่าการชี้โดเมน" ซึ่งเป็น URL forwarding คนละอัน
-4. รอ Cloudflare ขึ้น Active (ปกติไม่กี่ชั่วโมง)
-5. Worker → Settings → Domains & Routes → Add custom domain: `joodfangkhem.com` และ `www.joodfangkhem.com`
-6. ลบ A `@` กับ CNAME `www` ของ Vercel ทิ้ง
-7. Rules → Redirect Rules: `www` → apex แบบ 301 (ของเดิมที่ Vercel ทำให้ ต้องตั้งเองที่นี่)
-
-## 5. หลังขึ้นเสร็จ ตรวจ 5 อย่าง
+**3. R2 `bucket info` ขึ้น 0 B / object_count 0 ได้ทั้งที่ cache เต็ม** — เป็นตัวเลขฝั่งบิลที่หน่วงเป็นชั่วโมง
+ตรวจของจริงแบบนี้:
 
 ```bash
-curl -I https://joodfangkhem.com                       # 200 ไม่ใช่ 402
-curl -s https://joodfangkhem.com/robots.txt | head -3  # Sitemap: ต้องเป็นโดเมนจริง ไม่ใช่ localhost
-curl -s https://joodfangkhem.com/sitemap.xml | grep -c '<url>'   # ~830
-curl -sI https://www.joodfangkhem.com | grep -i location          # 301 ไป apex
-curl -s https://joodfangkhem.com/points/st-36 | grep -o '<link rel="canonical"[^>]*>'
+curl -sI https://joodfangkhem.com/points/bai-hui | grep -iE "x-nextjs-cache|cache-control"
+# ต้องได้ x-nextjs-cache: HIT และ s-maxage นับถอยหลังจาก 604800 ตามเวลาที่ build ไป
 ```
 
-แล้วเข้า `/admin/points/st-36` ล็อกอินจริง กดบันทึกสักครั้ง เพื่อดูว่า server action
-`revalidatePoint()` ทำงานบน Workers (หน้า public ต้องเปลี่ยนตามทันที ไม่ต้องรอ 7 วัน)
+**4. `proxy.ts` รันบน Node runtime ซึ่ง adapter เตือนเองว่า experimental บน Cloudflare**
+ถ้าวันหนึ่งพังหลังอัป adapter จุดที่จะพังคือ rewrite URL ไทย, กันหน้า `/favorites` `/protocols` `/admin`
+และ redirect `www` → apex — เทสสามอย่างนี้ทุกครั้งที่อัป
 
-## 6. เก็บกวาดฝั่ง Vercel
+## ตรวจหลัง deploy
 
-อย่าเพิ่งลบโปรเจกต์ Vercel จนกว่า Cloudflare จะนิ่ง เมื่อย้ายเสร็จแล้วค่อยปิด auto-deploy
-หรือลบโปรเจกต์ทิ้ง จะได้ไม่มีสองที่แย่งกันเสิร์ฟโดเมนเดียวกัน
+```bash
+B=https://joodfangkhem.com
+curl -s $B/points/st-36 | grep -o '<link rel="canonical"[^>]*>'   # ต้องเป็นโดเมนจริง
+curl -s $B/sitemap.xml | grep -c '<url>'                          # 854
+curl -s $B/points | grep -o 'href="/points/[a-z0-9-]*"' | sort -u | wc -l   # 120 = Supabase ติด
+curl -sI $B/points/bai-hui | grep -i x-nextjs-cache               # HIT
+curl -sI https://www.joodfangkhem.com/ | grep -i location         # 301 ไป apex
+curl -so /dev/null -w '%{http_code}\n' $B/favorites               # 307
+```
 
-## สิ่งที่ยังเป็นความเสี่ยง
+`120 จุด` คือตัวชี้ขาดว่า build variables ฝั่ง CI ยังอยู่ — ถ้า env หาย เว็บจะ build ผ่าน
+แต่ได้เว็บเปล่า 0 จุด เพราะ guard `hasSupabase` ใน `src/lib/queries.ts` คืนค่าว่างแทนที่จะ error
 
-- `src/proxy.ts` ของ Next 16 รันบน Node runtime ซึ่ง adapter บอกเองว่า **ยังเป็น experimental**
-  บน Cloudflare ถ้าวันหนึ่งพัง จุดที่จะพังคือ rewrite URL ไทยกับการกันหน้า /favorites /protocols /admin
-- Workers แผนฟรีจำกัด 100,000 คำขอ/วัน ทราฟฟิกที่ทำให้ Vercel พักโปรเจกต์คือ ~25,000/วัน
-  ยังอยู่ในโควตา แต่ถ้าบอทกลับมาหนักกว่าเดิมให้เปิด Bot Fight Mode (Security → Bots) ซึ่งฟรี
+## ค้างไว้
+
+- Search Console: ส่ง sitemap ใหม่ + request indexing (เว็บล่มไป 8 วัน)
+- AdSense: เช็คสถานะ review ถ้าถูกตีตกช่วง 402 ให้ยื่นใหม่
+- Vercel: รอให้ Cloudflare นิ่งสัก 2-3 วันแล้วค่อยปิด auto-deploy / ลบโปรเจกต์
+- ถ้าบอทกลับมาหนัก: เปิด Bot Fight Mode + AI Crawl Control (ฟรี บังคับได้จริงกว่า robots.txt)
