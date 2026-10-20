@@ -48,3 +48,8 @@ next-env.d.ts
 /reference/
 *.pdf
 *.epub
+
+# cloudflare build output
+.open-next
+.wrangler
+.dev.vars

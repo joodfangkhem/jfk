@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jfk",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-06-01",
+  // nodejs_compat จำเป็นเพราะ proxy.ts ของ Next 16 รันบน Node runtime เสมอ
+  // global_fetch_strictly_public ทำให้ fetch ไปโดเมนตัวเองออกทางอินเทอร์เน็ตจริง ไม่วนกลับเข้า worker
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "jfk"
+    }
+  ],
+  // ที่เก็บหน้า ISR ที่สร้างไว้แล้ว — ถ้าไม่มี binding นี้ หน้าแคชจะไม่ถูกเก็บข้ามคำขอ
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "jfk-cache"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
