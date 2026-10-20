@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ยกเว้นโดเมนจริง ซึ่งไม่ใช่ความลับและต้องมีตอน build บน Cloudflare
+!.env.production
 
 # vercel
 .vercel
