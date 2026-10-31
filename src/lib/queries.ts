@@ -1,5 +1,14 @@
 import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
-import type { Article, Condition, ConditionPoint, Meridian, Point } from '@/lib/types'
+import type {
+  Article,
+  AtlasPoint,
+  Condition,
+  ConditionPoint,
+  Meridian,
+  Point,
+  PointCoord,
+  SpeciesModel,
+} from '@/lib/types'
 
 const POINT_FIELDS =
   'id, code, slug, meridian_code, number, name_th, name_en, name_pinyin, name_zh, location_th, location_en, anatomy_th, anatomy_en, functions_th, functions_en, indications, indications_en, point_types, point_types_en, needle_th, needle_en, caution_th, caution_en, species, is_common, verified, popularity, image_url, image_alt, image_credit'
@@ -246,4 +255,50 @@ export async function getPointsByCodes(codes: string[]): Promise<Point[]> {
     .in('code', codes)
     .order('code')
   return data ?? []
+}
+
+// ---------------------------------------------------------------- แอตลาส 3 มิติ
+
+/** โมเดลที่เปิดใช้อยู่ เรียงตามลำดับที่ตั้งไว้ */
+export async function getSpeciesModels(): Promise<SpeciesModel[]> {
+  if (!hasSupabase) return []
+  const { data } = await supabasePublic
+    .from('species_models')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order')
+  return data ?? []
+}
+
+/** จุดทั้งหมดที่ปักพิกัดไว้แล้วของสปีชีส์หนึ่ง */
+export async function getAtlasPoints(species: string): Promise<AtlasPoint[]> {
+  if (!hasSupabase) return []
+  const { data } = await supabasePublic
+    .from('point_coords')
+    .select(
+      'x, y, z, bilateral, note_th, verified, points (id, code, slug, name_th, name_en, name_pinyin, meridian_code, is_common)'
+    )
+    .eq('species', species)
+
+  const rows = (data ?? []) as unknown as (Omit<PointCoord, 'point_id' | 'species'> & {
+    points: Pick<
+      Point,
+      'id' | 'code' | 'slug' | 'name_th' | 'name_en' | 'name_pinyin' | 'meridian_code' | 'is_common'
+    > | null
+  })[]
+
+  return rows
+    .filter((r) => r.points)
+    .map((r) => ({ ...r.points!, x: r.x, y: r.y, z: r.z, bilateral: r.bilateral, note_th: r.note_th, verified: r.verified }))
+    .sort((a, b) => a.meridian_code.localeCompare(b.meridian_code) || a.code.localeCompare(b.code))
+}
+
+/** สปีชีส์ที่จุดนี้ถูกปักไว้แล้ว ใช้ตัดสินใจว่าจะโชว์ลิงก์ไปแอตลาสไหม */
+export async function getPointCoordSpecies(pointId: string): Promise<string[]> {
+  if (!hasSupabase) return []
+  const { data } = await supabasePublic
+    .from('point_coords')
+    .select('species')
+    .eq('point_id', pointId)
+  return (data ?? []).map((r) => r.species as string)
 }

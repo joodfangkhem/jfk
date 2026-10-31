@@ -11,6 +11,7 @@ export default function SiteHeader({ locale }: { locale: Locale }) {
   const nav = [
     { href: '/points', label: d.nav.points },
     { href: '/meridians', label: d.nav.meridians },
+    { href: '/atlas', label: d.nav.atlas },
     { href: '/conditions', label: d.nav.conditions },
     { href: '/articles', label: d.nav.articles },
     { href: '/guide', label: d.nav.guide },

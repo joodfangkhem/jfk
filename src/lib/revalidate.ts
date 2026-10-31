@@ -34,3 +34,12 @@ export async function revalidatePoint(slug: string) {
     revalidatePath(`/${l}`)
   }
 }
+
+/** ปักหรือย้ายจุดบนโมเดล 3 มิติ — กระทบหน้าแอตลาสกับหน้าจุดนั้น */
+export async function revalidateAtlas(slug?: string) {
+  if (!(await requireAdmin())) return
+  for (const l of LOCALES) {
+    revalidatePath(`/${l}/atlas`)
+    if (slug) revalidatePath(`/${l}/points/${slug}`)
+  }
+}

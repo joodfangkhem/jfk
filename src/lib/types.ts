@@ -142,3 +142,46 @@ export type Article = {
   authors: Author | null
   article_cases: ArticleCase | null
 }
+
+export type SpeciesModel = {
+  species: string
+  label_th: string
+  label_en: string | null
+  model_url: string
+  display_scale: number
+  credit: string | null
+  credit_url: string | null
+  license: string | null
+  license_url: string | null
+  is_active: boolean
+  sort_order: number
+}
+
+export type PointCoord = {
+  point_id: string
+  species: string
+  x: number
+  y: number
+  z: number
+  bilateral: boolean
+  note_th: string | null
+  verified: boolean
+}
+
+/** จุดหนึ่งจุดพร้อมพิกัดบนโมเดล — รูปแบบที่หน้าแอตลาสใช้ */
+export type AtlasPoint = {
+  id: string
+  code: string
+  slug: string
+  name_th: string | null
+  name_en: string | null
+  name_pinyin: string | null
+  meridian_code: string
+  is_common: boolean
+  x: number
+  y: number
+  z: number
+  bilateral: boolean
+  note_th: string | null
+  verified: boolean
+}

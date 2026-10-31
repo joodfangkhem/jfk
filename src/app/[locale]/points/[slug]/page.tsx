@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { AlertTriangle, MapPin, Sparkles, Syringe } from 'lucide-react'
+import { AlertTriangle, Boxes, MapPin, Sparkles, Syringe } from 'lucide-react'
 import AdSlot from '@/components/AdSlot'
 import ArticleCard from '@/components/ArticleCard'
 import AdminEditButton from '@/components/AdminEditButton'
@@ -16,6 +16,7 @@ import {
   getPoint,
   getPointConditions,
   getPointImages,
+  getPointCoordSpecies,
   getArticlesForPoint,
   getRelatedPoints,
 } from '@/lib/queries'
@@ -74,12 +75,13 @@ export default async function PointPage({
   const point = await getPoint(slug)
   if (!point) notFound()
 
-  const [meridians, conditions, related, images, articles] = await Promise.all([
+  const [meridians, conditions, related, images, articles, coordSpecies] = await Promise.all([
     getMeridians(),
     getPointConditions(point.id),
     getRelatedPoints(point.id),
     getPointImages(point.id),
     getArticlesForPoint(point.id),
+    getPointCoordSpecies(point.id),
   ])
   const meridian = meridians.find((m) => m.code === point.meridian_code)
 
@@ -184,6 +186,20 @@ export default async function PointPage({
           </p>
         )}
       </section>
+
+      {coordSpecies.length > 0 && (
+        <Link
+          href={lp(locale, `/atlas#${point.slug}`)}
+          className="card p-4 flex items-center justify-between gap-3 hover:border-primary/50 transition"
+        >
+          <span className="flex items-center gap-2 font-semibold">
+            <Boxes size={17} className="text-primary" /> {d.atlas.onPoint}
+          </span>
+          <span className="text-sm text-muted">
+            {coordSpecies.map((s) => SPECIES_LABEL_I18N[locale][s] ?? s).join(' · ')} →
+          </span>
+        </Link>
+      )}
 
       {/* สรรพคุณ + ข้อบ่งใช้ */}
       <section className="card p-4">

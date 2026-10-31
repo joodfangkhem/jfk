@@ -25,7 +25,7 @@ export function pickArr(locale: Locale, th: string[] | null, en: string[] | null
 
 const th = {
   brandSuffix: 'จุดฝังเข็ม',
-  nav: { points: 'จุดฝังเข็ม', meridians: 'เส้นลมปราณ', conditions: 'ตามอาการ', articles: 'บทความ', guide: 'คู่มือใช้งาน', admin: 'ผู้ดูแล' },
+  nav: { points: 'จุดฝังเข็ม', meridians: 'เส้นลมปราณ', conditions: 'ตามอาการ', articles: 'บทความ', guide: 'คู่มือใช้งาน', atlas: 'แอตลาส 3D', admin: 'ผู้ดูแล' },
   auth: { signIn: 'เข้าสู่ระบบ', signOut: 'ออกจากระบบ', account: 'บัญชีของฉัน', saved: 'จุดที่บันทึกไว้', protocols: 'ชุดจุดของฉัน' },
   footer: {
     about: 'เกี่ยวกับ', privacy: 'ความเป็นส่วนตัว',
@@ -325,13 +325,34 @@ const th = {
     openLive: 'ดูหน้าจริง',
     linked: (n: number) => `พบรหัสจุดในเนื้อหา ${n} รหัส`,
   },
+  atlas: {
+    title: 'แอตลาส 3 มิติ',
+    sub: 'หมุนดูตำแหน่งจุดฝังเข็มบนตัวสุนัขและแมว แตะหมุดเพื่อเปิดรายละเอียดของจุดนั้น',
+    hint: 'ลากเพื่อหมุน · แตะหมุดเพื่อดูชื่อจุด',
+    clear: 'ล้างที่เลือก',
+    listTitle: 'จุดบนโมเดลตัวนี้',
+    filter: 'กรองด้วยรหัสหรือชื่อจุด',
+    emptySpecies: 'ยังไม่ได้ปักจุดของสัตว์ชนิดนี้ลงบนโมเดล',
+    emptyFilter: 'ไม่พบจุดที่ตรงกับคำค้นนี้',
+    pending: 'ตำแหน่งบนโมเดลยังรอตรวจสอบ',
+    pendingShort: 'รอตรวจสอบ',
+    seePoint: 'ดูรายละเอียดจุด',
+    loading: 'กำลังโหลดโมเดล…',
+    loadError: 'โหลดโมเดลไม่สำเร็จ',
+    model: 'โมเดล 3 มิติ',
+    license: 'สัญญาอนุญาต',
+    generic:
+      'โมเดลเป็นรูปร่างกลาง ๆ ไม่ได้อิงสายพันธุ์ใดสายพันธุ์หนึ่ง — ใช้ดูตำแหน่งคร่าว ๆ แล้วคลำยืนยัน landmark จริงบนตัวสัตว์ทุกครั้ง',
+    onPoint: 'ตำแหน่งบนโมเดล 3 มิติ',
+    openAtlas: 'เปิดในแอตลาส 3 มิติ',
+  },
   ad: 'โฆษณา',
   switchTo: 'English',
 }
 
 const en: typeof th = {
   brandSuffix: 'Vet Acupuncture',
-  nav: { points: 'Points', meridians: 'Meridians', conditions: 'By Condition', articles: 'Articles', guide: 'Guide', admin: 'Admin' },
+  nav: { points: 'Points', meridians: 'Meridians', conditions: 'By Condition', articles: 'Articles', guide: 'Guide', atlas: '3D Atlas', admin: 'Admin' },
   auth: { signIn: 'Sign In', signOut: 'Sign Out', account: 'My Account', saved: 'Saved Points', protocols: 'My Protocols' },
   footer: {
     about: 'About', privacy: 'Privacy',
@@ -630,6 +651,27 @@ const en: typeof th = {
     deleted: 'Deleted',
     openLive: 'View live page',
     linked: (n: number) => `${n} point references found`,
+  },
+  atlas: {
+    title: '3D Atlas',
+    sub: 'Rotate a dog or cat model to see where each acupuncture point sits. Tap a pin to open that point.',
+    hint: 'Drag to rotate · tap a pin for the point name',
+    clear: 'Clear selection',
+    listTitle: 'Points on this model',
+    filter: 'Filter by code or name',
+    emptySpecies: 'No points have been placed on this species yet',
+    emptyFilter: 'No point matches that search',
+    pending: 'Position on the model is still unverified',
+    pendingShort: 'unverified',
+    seePoint: 'Open point page',
+    loading: 'Loading model…',
+    loadError: 'Could not load the model',
+    model: '3D model',
+    license: 'licence',
+    generic:
+      'The model is a generic body shape, not a specific breed — use it for orientation and always palpate the real landmark on the animal.',
+    onPoint: 'Position on the 3D model',
+    openAtlas: 'Open in the 3D atlas',
   },
   ad: 'Advertisement',
   switchTo: 'ไทย',
