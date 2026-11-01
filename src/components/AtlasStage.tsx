@@ -14,7 +14,12 @@ export type AtlasMarker = {
   z: number
   bilateral: boolean
   verified: boolean
+  /** ตัวคูณขนาดหมุด 1 = ขนาดมาตรฐาน */
+  scale?: number
 }
+
+/** รัศมีหมุดมาตรฐาน เทียบกับด้านที่ยาวที่สุดของโมเดล */
+const PIN_RADIUS = 0.006
 
 type Props = {
   modelUrl: string
@@ -62,6 +67,14 @@ export default function AtlasStage({
   const pinsRef = useRef<THREE.Group | null>(null)
   const bodyRef = useRef<THREE.Mesh[]>([])
   const sizeRef = useRef(1)
+  // หมุดทุกอันใช้ทรงกลมหนึ่งใบกับวัสดุสามสีร่วมกัน แล้วย่อ/ขยายเอา
+  // (วาดหมุดใหม่ทุกครั้งที่เลือกจุด ถ้าสร้าง geometry ใหม่ทุกรอบจะรั่ว)
+  const pinGeoRef = useRef<THREE.SphereGeometry | null>(null)
+  const matsRef = useRef<{
+    verified: THREE.MeshBasicMaterial
+    pending: THREE.MeshBasicMaterial
+    selected: THREE.MeshBasicMaterial
+  } | null>(null)
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
@@ -127,6 +140,13 @@ export default function AtlasStage({
 
     const pins = new THREE.Group()
     scene.add(pins)
+
+    pinGeoRef.current = new THREE.SphereGeometry(1, 16, 12)
+    matsRef.current = {
+      verified: new THREE.MeshBasicMaterial({ color: COLOR.verified }),
+      pending: new THREE.MeshBasicMaterial({ color: COLOR.pending }),
+      selected: new THREE.MeshBasicMaterial({ color: COLOR.selected }),
+    }
 
     sceneRef.current = scene
     cameraRef.current = camera
@@ -241,6 +261,8 @@ export default function AtlasStage({
       })
       renderer.dispose()
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement)
+      pinGeoRef.current = null
+      matsRef.current = null
       modelRef.current = null
       bodyRef.current = []
     }
@@ -253,17 +275,21 @@ export default function AtlasStage({
     if (!pins || !model || status !== 'ready') return
 
     pins.clear()
-    const r = sizeRef.current * 0.011
-    const geo = new THREE.SphereGeometry(r, 14, 10)
-    const geoBig = new THREE.SphereGeometry(r * 1.7, 18, 12)
+    const geo = pinGeoRef.current
+    const mats = matsRef.current
+    if (!geo || !mats) return
 
+    const base = sizeRef.current * PIN_RADIUS
     for (const mk of markers) {
       const isSel = mk.id === selectedId
-      const color = isSel ? COLOR.selected : mk.verified ? COLOR.verified : COLOR.pending
-      const mat = new THREE.MeshBasicMaterial({ color })
+      // ตอนแอดมินกำลังปรับขนาด หมุดที่เลือกต้องเป็นขนาดจริง ไม่งั้นปรับแล้วอ่านผลไม่ได้
+      // หน้า public ขยายนิดหน่อยให้หาเจอง่ายตอนเลือกจากรายการ
+      const emphasis = isSel && !pickMode ? 1.25 : 1
+      const r = base * (mk.scale ?? 1) * emphasis
       const sides = mk.bilateral ? [1, -1] : [1]
       for (const s of sides) {
-        const pin = new THREE.Mesh(isSel ? geoBig : geo, mat)
+        const pin = new THREE.Mesh(geo, isSel ? mats.selected : mk.verified ? mats.verified : mats.pending)
+        pin.scale.setScalar(r)
         pin.position.copy(model.localToWorld(new THREE.Vector3(mk.x * s, mk.y, mk.z)))
         pin.renderOrder = isSel ? 2 : 1
         pin.userData.pointId = mk.id
@@ -299,7 +325,7 @@ export default function AtlasStage({
     const dist = camera.position.distanceTo(center)
     camera.position.copy(center).add(dir.normalize().multiplyScalar(dist))
     controls.update()
-  }, [markers, selectedId, status])
+  }, [markers, selectedId, status, pickMode])
 
   return (
     <div className={className ?? 'relative w-full h-[420px]'}>

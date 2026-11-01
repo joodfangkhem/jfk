@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { ChevronRight, Crosshair, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -30,6 +30,7 @@ export type PickerCoord = {
   y: number
   z: number
   bilateral: boolean
+  size_scale: number
   note_th: string | null
   verified: boolean
 }
@@ -96,6 +97,7 @@ export default function AtlasPicker({
           z: c.z,
           bilateral: c.bilateral,
           verified: c.verified,
+          scale: c.size_scale,
         }
       }),
     [placed, map, species]
@@ -136,6 +138,7 @@ export default function AtlasPicker({
         y: p.y,
         z: p.z,
         bilateral: prev?.bilateral ?? true,
+        size_scale: prev?.size_scale ?? 1,
         note_th: prev?.note_th ?? null,
         // ย้ายตำแหน่งแล้วต้องตรวจใหม่
         verified: false,
@@ -151,6 +154,22 @@ export default function AtlasPicker({
     if (!selected || !selectedCoord) return
     const row = { ...selectedCoord, ...change }
     if (await save(row, selected.slug)) toast.success('บันทึกแล้ว')
+  }
+
+  // สไลเดอร์ขนาด: ลากแล้วอัปเดตเฉพาะในหน้าเพื่อให้เห็นผลทันที
+  // แล้วค่อยเขียนลงฐานข้อมูลครั้งเดียวตอนปล่อยมือ ไม่ยิง upsert ทุกก้าวที่ลาก
+  const sizeDirty = useRef(false)
+
+  const previewSize = (v: number) => {
+    if (!selected || !selectedCoord) return
+    sizeDirty.current = true
+    setMap((m) => ({ ...m, [key(selected.id, species)]: { ...selectedCoord, size_scale: v } }))
+  }
+
+  const commitSize = () => {
+    if (!sizeDirty.current) return
+    sizeDirty.current = false
+    void patch({})
   }
 
   const remove = async () => {
@@ -288,6 +307,40 @@ export default function AtlasPicker({
                     />
                     ตรวจตำแหน่งแล้ว
                   </label>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <label htmlFor="atlas-size" className="text-sm shrink-0">
+                    ขนาดหมุด
+                  </label>
+                  <input
+                    id="atlas-size"
+                    type="range"
+                    // ต่ำกว่า 0.5 หมุดเล็กจนหายไปตอนซูมออก (ลองแล้ว 0.3 มองไม่เห็น)
+                    // ฐานข้อมูลยอมถึง 0.3 ไว้เป็นกันชน แต่สไลเดอร์ไม่ให้ลงไปถึง
+                    min={0.5}
+                    max={3}
+                    step={0.05}
+                    value={selectedCoord.size_scale}
+                    disabled={busy}
+                    // ลากแล้วเห็นผลทันทีบนโมเดล ค่อยเขียนลงฐานข้อมูลตอนปล่อยมือ
+                    onChange={(e) => previewSize(Number(e.target.value))}
+                    onPointerUp={commitSize}
+                    onKeyUp={commitSize}
+                    onBlur={commitSize}
+                    className="flex-1 min-w-40 accent-[var(--primary)]"
+                  />
+                  <span className="text-xs text-muted font-mono w-10 text-right">
+                    {selectedCoord.size_scale.toFixed(2)}×
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void patch({ size_scale: 1 })}
+                    disabled={busy || selectedCoord.size_scale === 1}
+                    className="chip hover:border-primary hover:text-primary"
+                  >
+                    ค่ามาตรฐาน
+                  </button>
                 </div>
 
                 <div className="flex gap-2 flex-wrap items-center">

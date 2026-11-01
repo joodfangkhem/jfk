@@ -164,6 +164,7 @@ export type PointCoord = {
   y: number
   z: number
   bilateral: boolean
+  size_scale: number
   note_th: string | null
   verified: boolean
 }
@@ -182,6 +183,7 @@ export type AtlasPoint = {
   y: number
   z: number
   bilateral: boolean
+  size_scale: number
   note_th: string | null
   verified: boolean
 }

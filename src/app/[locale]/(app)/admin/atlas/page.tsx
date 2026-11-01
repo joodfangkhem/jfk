@@ -52,7 +52,9 @@ export default async function AdminAtlasPage({
       .order('meridian_code')
       .order('number', { ascending: true, nullsFirst: false })
       .order('code'),
-    supabase.from('point_coords').select('point_id, species, x, y, z, bilateral, note_th, verified'),
+    supabase
+      .from('point_coords')
+      .select('point_id, species, x, y, z, bilateral, size_scale, note_th, verified'),
   ])
 
   return (

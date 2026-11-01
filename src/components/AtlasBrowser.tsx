@@ -89,6 +89,7 @@ export default function AtlasBrowser({
         z: p.z,
         bilateral: p.bilateral,
         verified: p.verified,
+        scale: p.size_scale,
       })),
     [points]
   )

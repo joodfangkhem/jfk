@@ -276,7 +276,7 @@ export async function getAtlasPoints(species: string): Promise<AtlasPoint[]> {
   const { data } = await supabasePublic
     .from('point_coords')
     .select(
-      'x, y, z, bilateral, note_th, verified, points (id, code, slug, name_th, name_en, name_pinyin, meridian_code, is_common)'
+      'x, y, z, bilateral, size_scale, note_th, verified, points (id, code, slug, name_th, name_en, name_pinyin, meridian_code, is_common)'
     )
     .eq('species', species)
 
@@ -289,7 +289,16 @@ export async function getAtlasPoints(species: string): Promise<AtlasPoint[]> {
 
   return rows
     .filter((r) => r.points)
-    .map((r) => ({ ...r.points!, x: r.x, y: r.y, z: r.z, bilateral: r.bilateral, note_th: r.note_th, verified: r.verified }))
+    .map((r) => ({
+      ...r.points!,
+      x: r.x,
+      y: r.y,
+      z: r.z,
+      bilateral: r.bilateral,
+      size_scale: r.size_scale,
+      note_th: r.note_th,
+      verified: r.verified,
+    }))
     .sort((a, b) => a.meridian_code.localeCompare(b.meridian_code) || a.code.localeCompare(b.code))
 }
 

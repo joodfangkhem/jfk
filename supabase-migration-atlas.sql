@@ -88,3 +88,15 @@ end $$;
 drop trigger if exists point_coords_set_updated on point_coords;
 create trigger point_coords_set_updated before update on point_coords
   for each row execute function point_coords_touch();
+
+-- -------------------------------------------------------------
+-- เพิ่มทีหลัง: ขนาดหมุดต่อจุด
+-- จุดฝังเข็มไม่ได้กว้างเท่ากันทุกจุด บางจุดเป็นบริเวณกว้าง (ไป่ฮุ่ย) บางจุดแคบมาก
+-- เก็บเป็นตัวคูณของขนาดมาตรฐาน ไม่ใช่ขนาดสัมบูรณ์ จะได้ไม่ผูกกับสเกลของโมเดล
+-- -------------------------------------------------------------
+alter table point_coords
+  add column if not exists size_scale double precision not null default 1;
+
+alter table point_coords drop constraint if exists point_coords_size_scale_range;
+alter table point_coords
+  add constraint point_coords_size_scale_range check (size_scale >= 0.3 and size_scale <= 3);
