@@ -328,7 +328,15 @@ const th = {
   atlas: {
     title: 'แอตลาส 3 มิติ',
     sub: 'หมุนดูตำแหน่งจุดฝังเข็มบนตัวสุนัขและแมว แตะหมุดเพื่อเปิดรายละเอียดของจุดนั้น',
-    hint: 'ลากเพื่อหมุน · แตะหมุดเพื่อดูชื่อจุด',
+    hint: 'ลากเพื่อหมุน · แตะหมุดเพื่อดูชื่อจุด · แตะสองครั้งเพื่อซูมเข้าตรงนั้น',
+    hintPan: ' · สองนิ้ว คลิกขวา หรือ Shift+ลาก เพื่อเลื่อนภาพ (หรือกดปุ่มรูปมือ)',
+    controls: {
+      rotate: 'โหมดหมุน (ลากเพื่อหมุน)',
+      pan: 'โหมดเลื่อน (ลากเพื่อเลื่อนภาพ)',
+      zoomIn: 'ซูมเข้า',
+      zoomOut: 'ซูมออก',
+      reset: 'กลับมุมมองเริ่มต้น',
+    },
     clear: 'ล้างที่เลือก',
     listTitle: 'จุดบนโมเดลตัวนี้',
     filter: 'กรองด้วยรหัสหรือชื่อจุด',
@@ -655,7 +663,15 @@ const en: typeof th = {
   atlas: {
     title: '3D Atlas',
     sub: 'Rotate a dog or cat model to see where each acupuncture point sits. Tap a pin to open that point.',
-    hint: 'Drag to rotate · tap a pin for the point name',
+    hint: 'Drag to rotate · tap a pin for its name · double-tap to zoom in there',
+    hintPan: ' · two fingers, right-click or Shift+drag to move the view (or use the hand button)',
+    controls: {
+      rotate: 'Rotate mode (drag to rotate)',
+      pan: 'Move mode (drag to move the view)',
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      reset: 'Reset view',
+    },
     clear: 'Clear selection',
     listTitle: 'Points on this model',
     filter: 'Filter by code or name',

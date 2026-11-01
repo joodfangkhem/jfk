@@ -141,9 +141,12 @@ export default function AtlasBrowser({
             className="relative w-full h-[320px] sm:h-[440px]"
             loadingText={d.loading}
             errorText={d.loadError}
+            labels={d.controls}
           />
-          <p className="absolute left-3 top-3 text-[11px] text-muted bg-surface/85 border border-border rounded-md px-2 py-1 pointer-events-none">
+          {/* จอเล็กเหลือเนื้อที่ให้โมเดลน้อย จึงบอกแค่ท่าพื้นฐาน ส่วนวิธีเลื่อนภาพมีปุ่มรูปมืออยู่แล้ว */}
+          <p className="absolute left-3 top-3 max-w-[58%] text-[11px] leading-snug text-muted bg-surface/85 border border-border rounded-md px-2 py-1 pointer-events-none">
             {d.hint}
+            <span className="hidden sm:inline">{d.hintPan}</span>
           </p>
           {selectedId && (
             <button

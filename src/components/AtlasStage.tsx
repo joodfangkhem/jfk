@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { Hand, Maximize2, Minus, Plus, Rotate3d } from 'lucide-react'
 
 export type AtlasMarker = {
   id: string
@@ -21,6 +22,25 @@ export type AtlasMarker = {
 /** รัศมีหมุดมาตรฐาน เทียบกับด้านที่ยาวที่สุดของโมเดล */
 const PIN_RADIUS = 0.006
 
+/** เลื่อนจุดหมุนออกจากกลางโมเดลได้ไกลสุดเท่าไร (เท่าของด้านที่ยาวที่สุด) */
+const PAN_LIMIT = 0.6
+
+export type AtlasLabels = {
+  rotate: string
+  pan: string
+  zoomIn: string
+  zoomOut: string
+  reset: string
+}
+
+const TH_LABELS: AtlasLabels = {
+  rotate: 'โหมดหมุน (ลากเพื่อหมุน)',
+  pan: 'โหมดเลื่อน (ลากเพื่อเลื่อนภาพ)',
+  zoomIn: 'ซูมเข้า',
+  zoomOut: 'ซูมออก',
+  reset: 'กลับมุมมองเริ่มต้น',
+}
+
 type Props = {
   modelUrl: string
   markers: AtlasMarker[]
@@ -32,6 +52,7 @@ type Props = {
   className?: string
   loadingText?: string
   errorText?: string
+  labels?: AtlasLabels
 }
 
 const COLOR = {
@@ -57,6 +78,7 @@ export default function AtlasStage({
   className,
   loadingText = 'กำลังโหลดโมเดล…',
   errorText = 'โหลดโมเดลไม่สำเร็จ',
+  labels = TH_LABELS,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
@@ -67,6 +89,12 @@ export default function AtlasStage({
   const pinsRef = useRef<THREE.Group | null>(null)
   const bodyRef = useRef<THREE.Mesh[]>([])
   const sizeRef = useRef(1)
+  /** กลางโมเดล ใช้เป็นหลักยึดไม่ให้เลื่อนภาพหลุดออกไปจนหาตัวสัตว์ไม่เจอ */
+  const centerRef = useRef(new THREE.Vector3())
+  /** จุดที่กล้องกำลังเลื่อนเข้าไปหา (แตะสองครั้ง / เลือกจุดที่อยู่นอกจอ) */
+  const focusRef = useRef<THREE.Vector3 | null>(null)
+  /** โหมดเลื่อนเปิดอยู่ไหม — listener ที่ผูกครั้งเดียวต้องอ่านค่าล่าสุด */
+  const panModeRef = useRef(false)
   // หมุดทุกอันใช้ทรงกลมหนึ่งใบกับวัสดุสามสีร่วมกัน แล้วย่อ/ขยายเอา
   // (วาดหมุดใหม่ทุกครั้งที่เลือกจุด ถ้าสร้าง geometry ใหม่ทุกรอบจะรั่ว)
   const pinGeoRef = useRef<THREE.SphereGeometry | null>(null)
@@ -77,6 +105,9 @@ export default function AtlasStage({
   } | null>(null)
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  // ปุ่มสลับโหมดสำคัญกับมือถือ: สองนิ้วเพื่อเลื่อนภาพทำยากบนจอเล็ก
+  // และบนเดสก์ท็อปน้อยคนรู้ว่าลากด้วยปุ่มขวาคือการเลื่อน
+  const [mode, setMode] = useState<'rotate' | 'pan'>('rotate')
 
   // ค่าที่ event handler ต้องอ่านล่าสุด โดยไม่ต้องผูก listener ใหม่ทุกครั้ง
   const pickModeRef = useRef(pickMode)
@@ -98,15 +129,33 @@ export default function AtlasStage({
     const center = box.getCenter(new THREE.Vector3())
     const d = Math.max(size.x, size.y, size.z)
     sizeRef.current = d
+    centerRef.current.copy(center)
+    focusRef.current = null
     controls.target.copy(center)
     // มุมเริ่มต้นเป็นมุมด้านข้างค่อนหน้า — มุมที่ตำราฝังเข็มใช้วาดแผนภาพ
     // เห็นแนวสันหลัง ซี่โครง และขาทั้งสี่พร้อมกัน ต่างจากมุมหน้าตรงที่ลำตัวถูกบัง
     camera.position.set(center.x + d * 1.25, center.y + d * 0.3, center.z + d * 0.5)
-    camera.near = d / 100
+    camera.near = d / 200
     camera.far = d * 40
     camera.updateProjectionMatrix()
-    controls.minDistance = d * 0.45
+    // เข้าได้ใกล้กว่าเดิมมาก (เดิม 0.45 ของตัวสัตว์ = ซูมดูจุดเดียวไม่ได้เลย)
+    controls.minDistance = d * 0.1
     controls.maxDistance = d * 3
+    controls.update()
+  }, [])
+
+  /** ซูมด้วยปุ่ม — คนที่ใช้ทัชแพดหรือจอสัมผัสมักหาทางซูมไม่เจอ */
+  const zoomBy = useCallback((factor: number) => {
+    const camera = cameraRef.current
+    const controls = controlsRef.current
+    if (!camera || !controls) return
+    const dir = camera.position.clone().sub(controls.target)
+    const dist = THREE.MathUtils.clamp(
+      dir.length() * factor,
+      controls.minDistance,
+      controls.maxDistance
+    )
+    camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist))
     controls.update()
   }, [])
 
@@ -128,7 +177,22 @@ export default function AtlasStage({
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
-    controls.enablePan = false
+    // เลื่อนภาพได้ — ไม่งั้นพอซูมเข้าใกล้แล้วดูส่วนอื่นของตัวสัตว์ไม่ได้เลย
+    controls.enablePan = true
+    controls.screenSpacePanning = true
+    controls.panSpeed = 1
+    // ซูมเข้าหาตำแหน่งเมาส์ ทำให้เลื่อนไปดูส่วนที่ต้องการได้ด้วยล้อเดียว
+    controls.zoomToCursor = true
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.PAN,
+    }
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }
+    // ลูกศรบนคีย์บอร์ดเลื่อนภาพได้เมื่อโฟกัสอยู่ที่ฉาก (ผูกกับ mount ไม่ใช่ window
+    // ไม่งั้นลูกศรของทั้งหน้าจะถูกยึดไป)
+    controls.keyPanSpeed = 14
+    controls.listenToKeyEvents(mount)
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8575, 2.0))
     const key = new THREE.DirectionalLight(0xffffff, 1.5)
@@ -200,15 +264,57 @@ export default function AtlasStage({
     const ro = new ResizeObserver(resize)
     ro.observe(mount)
 
+    /** กันเลื่อนภาพหลุดกรอบ — ขยับกล้องตามไปด้วยเพื่อให้แค่ "ชน" ขอบ ไม่ใช่ภาพกระตุก */
+    const clampPan = () => {
+      const t = controls.target
+      const c = centerRef.current
+      const lim = sizeRef.current * PAN_LIMIT
+      const nx = THREE.MathUtils.clamp(t.x, c.x - lim, c.x + lim)
+      const ny = THREE.MathUtils.clamp(t.y, c.y - lim, c.y + lim)
+      const nz = THREE.MathUtils.clamp(t.z, c.z - lim, c.z + lim)
+      if (nx === t.x && ny === t.y && nz === t.z) return
+      camera.position.add(new THREE.Vector3(nx - t.x, ny - t.y, nz - t.z))
+      t.set(nx, ny, nz)
+    }
+
     renderer.setAnimationLoop(() => {
+      // เลื่อนกล้องเข้าหาจุดที่สั่งโฟกัสแบบนุ่ม ๆ (กล้องกับเป้าขยับพร้อมกัน ระยะห่างคงเดิม)
+      const focus = focusRef.current
+      if (focus) {
+        const step = focus.clone().sub(controls.target)
+        if (step.length() < sizeRef.current * 0.002) {
+          camera.position.add(step)
+          controls.target.copy(focus)
+          focusRef.current = null
+        } else {
+          step.multiplyScalar(0.16)
+          controls.target.add(step)
+          camera.position.add(step)
+        }
+      }
       controls.update()
+      clampPan()
       renderer.render(scene, camera)
     })
 
-    // ---- คลิก: แยกคลิกจริงออกจากการลากหมุน
+    // ---- คลิก: แยกคลิกจริงออกจากการลากหมุน / แตะสองครั้ง = โฟกัสตรงนั้น
     const ray = new THREE.Raycaster()
     const ndc = new THREE.Vector2()
     let down: { x: number; y: number } | null = null
+    let lastTap = { t: 0, x: 0, y: 0 }
+
+    /** หาจุดบนฉากที่อยู่ใต้ตำแหน่งนิ้ว/เมาส์ */
+    const hitAt = (clientX: number, clientY: number) => {
+      const r = renderer.domElement.getBoundingClientRect()
+      ndc.x = ((clientX - r.left) / r.width) * 2 - 1
+      ndc.y = -((clientY - r.top) / r.height) * 2 + 1
+      ray.setFromCamera(ndc, camera)
+      const onPin = ray.intersectObjects(pins.children, true)[0]
+      if (onPin) return { kind: 'pin' as const, hit: onPin }
+      const onBody = ray.intersectObjects(bodyRef.current, true)[0]
+      if (onBody) return { kind: 'body' as const, hit: onBody }
+      return null
+    }
 
     const onDown = (e: PointerEvent) => {
       down = { x: e.clientX, y: e.clientY }
@@ -219,28 +325,46 @@ export default function AtlasStage({
       down = null
       if (moved > 6 || !modelRef.current) return
 
-      const r = renderer.domElement.getBoundingClientRect()
-      ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1
-      ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1
-      ray.setFromCamera(ndc, camera)
+      const now = performance.now()
+      const isDouble =
+        now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24
+      lastTap = { t: now, x: e.clientX, y: e.clientY }
+
+      const found = hitAt(e.clientX, e.clientY)
+
+      // แตะ/คลิกสองครั้งบนตัวสัตว์ = ย้ายจุดหมุนไปที่นั้น แล้วหมุนกับซูมรอบจุดนั้นได้
+      // ทางที่เร็วที่สุดในการ "ไปดูอีกด้าน" ตอนซูมเข้ามาแล้ว
+      if (isDouble && found) {
+        focusRef.current = found.hit.point.clone()
+        return
+      }
 
       // หมุดอยู่หน้าสุดเสมอ เช็คก่อนตัวสัตว์
-      const onPin = ray.intersectObjects(pins.children, true)[0]
-      if (onPin) {
-        const id = onPin.object.userData.pointId as string | undefined
+      if (found?.kind === 'pin') {
+        const id = found.hit.object.userData.pointId as string | undefined
         if (id && onSelectRef.current) onSelectRef.current(id)
         return
       }
 
       if (!pickModeRef.current || !onPickRef.current) return
-      const hit = ray.intersectObjects(bodyRef.current, true)[0]
-      if (!hit) return
-      const local = modelRef.current.worldToLocal(hit.point.clone())
+      if (found?.kind !== 'body') return
+      const local = modelRef.current.worldToLocal(found.hit.point.clone())
       onPickRef.current({ x: local.x, y: local.y, z: local.z })
+    }
+
+    // Shift + ลาก = เลื่อนภาพ ทั้งที่ยังอยู่โหมดหมุน (ทางลัดที่คนใช้โปรแกรม 3D คุ้นมือ)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') controls.mouseButtons.LEFT = THREE.MOUSE.PAN
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== 'Shift') return
+      controls.mouseButtons.LEFT = panModeRef.current ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE
     }
 
     renderer.domElement.addEventListener('pointerdown', onDown)
     renderer.domElement.addEventListener('pointerup', onUp)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
 
     return () => {
       disposed = true
@@ -248,6 +372,8 @@ export default function AtlasStage({
       renderer.setAnimationLoop(null)
       renderer.domElement.removeEventListener('pointerdown', onDown)
       renderer.domElement.removeEventListener('pointerup', onUp)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
       controls.dispose()
       draco.dispose()
       scene.traverse((o) => {
@@ -265,8 +391,21 @@ export default function AtlasStage({
       matsRef.current = null
       modelRef.current = null
       bodyRef.current = []
+      focusRef.current = null
     }
   }, [modelUrl, fit])
+
+  // ---- โหมดหมุน/เลื่อน: เปลี่ยนความหมายของการลากหนึ่งนิ้วและปุ่มซ้าย
+  useEffect(() => {
+    panModeRef.current = mode === 'pan'
+    const controls = controlsRef.current
+    const renderer = rendererRef.current
+    if (!controls) return
+    const pan = mode === 'pan'
+    controls.mouseButtons.LEFT = pan ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE
+    controls.touches.ONE = pan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE
+    if (renderer) renderer.domElement.style.cursor = pan ? 'grab' : 'default'
+  }, [mode])
 
   // ---- วาดหมุดใหม่เมื่อรายการจุดหรือจุดที่เลือกเปลี่ยน
   useEffect(() => {
@@ -317,9 +456,17 @@ export default function AtlasStage({
         best = p
       }
     }
-    if (!best || bestDot >= 0.15) return
+    if (!best) return
 
-    const dir = best.sub(center)
+    // ซูมเข้ามาแล้วเลือกจุดอื่นจากรายการ หมุดนั้นมักอยู่นอกจอ — เลื่อนภาพไปหาให้
+    // (เช็คตำแหน่งบนจอก่อนย้าย ถ้ายังเห็นอยู่กลาง ๆ ไม่ต้องขยับ)
+    const onScreen = best.clone().project(camera)
+    const offScreen = onScreen.z > 1 || Math.abs(onScreen.x) > 0.72 || Math.abs(onScreen.y) > 0.72
+    if (offScreen) focusRef.current = best.clone()
+
+    if (bestDot >= 0.15) return
+
+    const dir = best.clone().sub(center)
     dir.y = Math.abs(dir.y) * 0.4 + sizeRef.current * 0.12
     if (dir.lengthSq() < 1e-12) return
     const dist = camera.position.distanceTo(center)
@@ -327,9 +474,51 @@ export default function AtlasStage({
     controls.update()
   }, [markers, selectedId, status, pickMode])
 
+  const btn =
+    'grid place-items-center w-9 h-9 rounded-md bg-surface/90 border border-border text-text ' +
+    'hover:border-primary hover:text-primary active:scale-95 transition disabled:opacity-40'
+
   return (
     <div className={className ?? 'relative w-full h-[420px]'}>
-      <div ref={mountRef} className="w-full h-full rounded-[var(--radius)] overflow-hidden" />
+      <div
+        ref={mountRef}
+        tabIndex={0}
+        className="w-full h-full rounded-[var(--radius)] overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+      />
+      {status === 'ready' && (
+        <div className="absolute right-3 bottom-3 flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === 'rotate' ? 'pan' : 'rotate'))}
+            className={
+              mode === 'pan' ? `${btn} border-primary text-primary bg-surface` : btn
+            }
+            aria-pressed={mode === 'pan'}
+            title={mode === 'pan' ? labels.rotate : labels.pan}
+            aria-label={mode === 'pan' ? labels.rotate : labels.pan}
+          >
+            {mode === 'pan' ? <Hand size={16} /> : <Rotate3d size={16} />}
+          </button>
+          <button type="button" onClick={() => zoomBy(0.7)} className={btn} title={labels.zoomIn} aria-label={labels.zoomIn}>
+            <Plus size={16} />
+          </button>
+          <button type="button" onClick={() => zoomBy(1 / 0.7)} className={btn} title={labels.zoomOut} aria-label={labels.zoomOut}>
+            <Minus size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              fit()
+              setMode('rotate')
+            }}
+            className={btn}
+            title={labels.reset}
+            aria-label={labels.reset}
+          >
+            <Maximize2 size={16} />
+          </button>
+        </div>
+      )}
       {status !== 'ready' && (
         <div className="absolute inset-0 grid place-items-center text-sm text-muted">
           {status === 'loading' ? loadingText : errorText}
