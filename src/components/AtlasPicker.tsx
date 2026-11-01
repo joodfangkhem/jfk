@@ -140,8 +140,9 @@ export default function AtlasPicker({
         bilateral: prev?.bilateral ?? true,
         size_scale: prev?.size_scale ?? 1,
         note_th: prev?.note_th ?? null,
-        // ย้ายตำแหน่งแล้วต้องตรวจใหม่
-        verified: false,
+        // คนที่คลิกปักคือสัตวแพทย์เจ้าของเว็บอยู่แล้ว การปักจึงนับเป็นการยืนยันในตัว
+        // ถ้ายังไม่มั่นใจค่อยติ๊กออกเอง และการย้ายตำแหน่งไม่รีเซ็ตสถานะเดิม
+        verified: prev?.verified ?? true,
       }
       if (await save(row, selected.slug)) {
         toast.success(`ปัก ${selected.code} แล้ว`)

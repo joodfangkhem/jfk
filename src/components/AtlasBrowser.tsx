@@ -4,6 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ExternalLink, RotateCcw } from 'lucide-react'
+import AtlasVerifyButton from '@/components/AtlasVerifyButton'
 import type { AtlasPoint, SpeciesModel } from '@/lib/types'
 import { lp, t, type Locale } from '@/lib/i18n'
 
@@ -43,7 +44,14 @@ export default function AtlasBrowser({
   const [species, setSpecies] = useState(initialSpecies ?? models[0]?.species ?? 'dog')
   const [query, setQuery] = useState('')
 
-  const points = useMemo(() => pointsBySpecies[species] ?? [], [pointsBySpecies, species])
+  // จุดที่แอดมินเพิ่งกดยืนยันในหน้านี้ — หน้าเป็น static จึงต้องอัปเดตเองก่อน revalidate ตามมา
+  const [justVerified, setJustVerified] = useState<string[]>([])
+
+  const points = useMemo(() => {
+    const list = pointsBySpecies[species] ?? []
+    if (!justVerified.length) return list
+    return list.map((p) => (justVerified.includes(p.id) ? { ...p, verified: true } : p))
+  }, [pointsBySpecies, species, justVerified])
 
   const [selectedId, setSelectedId] = useState<string | null>(
     () => points.find((p) => p.slug === initialPointSlug)?.id ?? null
@@ -160,12 +168,22 @@ export default function AtlasBrowser({
             )}
             {!selected.verified && <p className="text-xs text-warn mt-1">{d.pending}</p>}
           </div>
-          <Link
-            href={lp(locale, `/points/${selected.slug}`)}
-            className="chip hover:border-primary hover:text-primary shrink-0"
-          >
-            {d.seePoint} <ExternalLink size={12} />
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            {!selected.verified && (
+              <AtlasVerifyButton
+                pointId={selected.id}
+                species={species}
+                slug={selected.slug}
+                onVerified={() => setJustVerified((v) => [...v, selected.id])}
+              />
+            )}
+            <Link
+              href={lp(locale, `/points/${selected.slug}`)}
+              className="chip hover:border-primary hover:text-primary"
+            >
+              {d.seePoint} <ExternalLink size={12} />
+            </Link>
+          </div>
         </div>
       )}
 
