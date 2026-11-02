@@ -54,7 +54,7 @@ export default async function AdminAtlasPage({
       .order('code'),
     supabase
       .from('point_coords')
-      .select('point_id, species, x, y, z, bilateral, size_scale, note_th, verified'),
+      .select('point_id, species, x, y, z, bilateral, size_scale, note_th, verified, dir_x, dir_y, dir_z'),
   ])
 
   return (

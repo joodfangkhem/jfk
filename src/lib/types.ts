@@ -167,6 +167,10 @@ export type PointCoord = {
   size_scale: number
   note_th: string | null
   verified: boolean
+  // ทิศทางที่เข็มแทงเข้าไป (unit vector ใน local space ของโมเดล) null = ยังไม่ระบุ
+  dir_x: number | null
+  dir_y: number | null
+  dir_z: number | null
 }
 
 /** จุดหนึ่งจุดพร้อมพิกัดบนโมเดล — รูปแบบที่หน้าแอตลาสใช้ */
@@ -186,4 +190,7 @@ export type AtlasPoint = {
   size_scale: number
   note_th: string | null
   verified: boolean
+  dir_x: number | null
+  dir_y: number | null
+  dir_z: number | null
 }

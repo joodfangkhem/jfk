@@ -34,6 +34,9 @@ export type PickerCoord = {
   size_scale: number
   note_th: string | null
   verified: boolean
+  dir_x: number | null
+  dir_y: number | null
+  dir_z: number | null
 }
 
 const key = (pointId: string, species: string) => `${pointId}|${species}`
@@ -55,6 +58,9 @@ export default function AtlasPicker({
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
   const [onlyMissing, setOnlyMissing] = useState(false)
+  // โหมดตั้งมุมเฉียง: คลิกครั้งถัดไปคือ "เข็มเล็งไปทางไหน" ไม่ใช่การย้ายตำแหน่งจุด
+  // เก็บเป็น key ของจุดที่กำลังเล็ง ไม่ใช่ boolean เพื่อให้สลับจุดแล้วเลิกเล็งเอง
+  const [aimFor, setAimFor] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   // ฉากส่งฟังก์ชันแคปภาพกลับมาเมื่อโมเดลโหลดเสร็จ เก็บใน ref เพราะไม่ต้อง re-render ตาม
@@ -104,6 +110,10 @@ export default function AtlasPicker({
           bilateral: c.bilateral,
           verified: c.verified,
           scale: c.size_scale,
+          dir:
+            c.dir_x !== null && c.dir_y !== null && c.dir_z !== null
+              ? { x: c.dir_x, y: c.dir_y, z: c.dir_z }
+              : null,
         }
       }),
     [placed, map, species]
@@ -111,6 +121,12 @@ export default function AtlasPicker({
 
   const selected = speciesPoints.find((p) => p.id === selectedId) ?? null
   const selectedCoord = selected ? map[key(selected.id, species)] : undefined
+  const hasDir =
+    selectedCoord?.dir_x !== null &&
+    selectedCoord?.dir_y !== null &&
+    selectedCoord?.dir_z !== null
+  const aimKey = selected ? key(selected.id, species) : null
+  const aim = aimKey !== null && aimFor === aimKey
 
   const save = useCallback(
     async (row: PickerCoord, slug: string) => {
@@ -131,12 +147,41 @@ export default function AtlasPicker({
   )
 
   const onPick = useCallback(
-    async (p: { x: number; y: number; z: number }) => {
+    async (p: { x: number; y: number; z: number; nx: number; ny: number; nz: number }) => {
       if (!selected) {
         toast('เลือกจุดจากรายการก่อน แล้วค่อยคลิกบนตัวสัตว์')
         return
       }
       const prev = map[key(selected.id, species)]
+
+      // โหมดตั้งมุม: คลิกนี้คือเป้าที่เข็มเล็งไป ทิศทาง = จากตัวจุดไปหาเป้า
+      // ใช้การคลิกเป้าแทนสไลเดอร์องศา เพราะคำบรรยายในตำราพูดเป็น "เฉียงเข้าหา..." อยู่แล้ว
+      if (aim) {
+        if (!prev) {
+          toast.error('ปักตำแหน่งจุดก่อน แล้วค่อยตั้งมุม')
+          return
+        }
+        const dx = p.x - prev.x
+        const dy = p.y - prev.y
+        const dz = p.z - prev.z
+        const len = Math.hypot(dx, dy, dz)
+        if (len < 1e-6) {
+          toast.error('คลิกเป้าให้ห่างจากตัวจุดหน่อย')
+          return
+        }
+        const row: PickerCoord = {
+          ...prev,
+          dir_x: dx / len,
+          dir_y: dy / len,
+          dir_z: dz / len,
+        }
+        if (await save(row, selected.slug)) {
+          setAimFor(null)
+          toast.success(`ตั้งมุมแทงของ ${selected.code} แล้ว`)
+        }
+        return
+      }
+
       const row: PickerCoord = {
         point_id: selected.id,
         species,
@@ -149,12 +194,18 @@ export default function AtlasPicker({
         // คนที่คลิกปักคือสัตวแพทย์เจ้าของเว็บอยู่แล้ว การปักจึงนับเป็นการยืนยันในตัว
         // ถ้ายังไม่มั่นใจค่อยติ๊กออกเอง และการย้ายตำแหน่งไม่รีเซ็ตสถานะเดิม
         verified: prev?.verified ?? true,
+        // ท่าตั้งต้นคือแทงตั้งฉาก = สวนทางกับ normal ของผิวตรงที่คลิก
+        // ซึ่งตรงกับจุดส่วนใหญ่อยู่แล้ว จุดที่แทงเฉียงค่อยกดตั้งมุมทีหลัง
+        // การคลิกปักใหม่จึงรีเซ็ตมุมกลับเป็นตั้งฉากเสมอ เพราะผิวตรงจุดใหม่หันไปอีกทาง
+        dir_x: -p.nx,
+        dir_y: -p.ny,
+        dir_z: -p.nz,
       }
       if (await save(row, selected.slug)) {
         toast.success(`ปัก ${selected.code} แล้ว`)
       }
     },
-    [selected, species, map, save]
+    [selected, species, map, save, aim]
   )
 
   const patch = async (change: Partial<PickerCoord>) => {
@@ -278,6 +329,9 @@ export default function AtlasPicker({
     }
   }
 
+  const clearDir = () =>
+    patch({ dir_x: null, dir_y: null, dir_z: null })
+
   const nextMissing = () => {
     const i = speciesPoints.findIndex((p) => p.id === selectedId)
     const after = speciesPoints.slice(i + 1).find((p) => !map[key(p.id, species)])
@@ -332,13 +386,17 @@ export default function AtlasPicker({
             className="relative w-full h-[320px] sm:h-[460px]"
           />
           <p className="absolute left-3 top-3 text-[11px] bg-surface/90 border border-border rounded-md px-2 py-1 pointer-events-none max-w-[70%]">
-            {selected ? (
+            {!selected ? (
+              'เลือกจุดจากรายการด้านล่างก่อน แล้วคลิกบนตัวสัตว์'
+            ) : aim ? (
+              <>
+                กำลังตั้งมุมของ <strong className="text-accent">{selected.code}</strong> — คลิกตรงที่เข็มเล็งไป
+              </>
+            ) : (
               <>
                 กำลังปัก <strong className="text-accent">{selected.code}</strong> — คลิกบนตัวสัตว์ได้เลย
                 {selectedCoord && ' (คลิกใหม่เพื่อย้ายตำแหน่ง)'}
               </>
-            ) : (
-              'เลือกจุดจากรายการด้านล่างก่อน แล้วคลิกบนตัวสัตว์'
             )}
             <span className="block text-muted mt-0.5">
               ลากเพื่อหมุน · คลิกขวา / Shift+ลาก / สองนิ้ว เพื่อเลื่อนภาพ · ดับเบิลคลิกเพื่อเล็งเข้าตรงนั้น
@@ -452,6 +510,39 @@ export default function AtlasPicker({
                   >
                     <Trash2 size={12} /> ลบพิกัด
                   </button>
+                </div>
+
+                <div className="flex gap-2 flex-wrap items-center pt-1 border-t border-border">
+                  <span className="text-sm shrink-0">มุมแทง</span>
+                  <span className={hasDir ? 'chip text-primary border-primary/30' : 'chip text-muted'}>
+                    {hasDir ? 'ระบุแล้ว' : 'ยังไม่ระบุ'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAimFor(aim ? null : aimKey)}
+                    disabled={busy}
+                    aria-pressed={aim}
+                    className={
+                      aim
+                        ? 'chip border-accent text-accent'
+                        : 'chip hover:border-primary hover:text-primary'
+                    }
+                  >
+                    <Crosshair size={12} /> {aim ? 'ยกเลิกการเล็ง' : 'ตั้งมุมเฉียง'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearDir}
+                    disabled={busy || !hasDir}
+                    className="chip hover:border-accent hover:text-accent disabled:opacity-40"
+                  >
+                    ล้างทิศทาง
+                  </button>
+                  <p className="text-xs text-muted basis-full leading-relaxed">
+                    คลิกปักบนตัวสัตว์ = แทงตั้งฉากกับผิวตรงนั้นให้อัตโนมัติ (ปักใหม่ก็รีเซ็ตกลับเป็นตั้งฉาก)
+                    · กด “ตั้งมุมเฉียง” แล้วคลิกตรงที่เข็มเล็งไป · เข็มจะโผล่ให้เห็นเฉพาะจุดที่เลือกอยู่
+                    · ความยาวเข็มเป็นค่าคงที่ ไม่ได้สื่อความลึกเป็น cun
+                  </p>
                 </div>
 
                 <div className="flex gap-2 flex-wrap items-center pt-1 border-t border-border">

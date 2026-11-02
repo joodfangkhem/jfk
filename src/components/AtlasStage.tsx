@@ -17,6 +17,11 @@ export type AtlasMarker = {
   verified: boolean
   /** ตัวคูณขนาดหมุด 1 = ขนาดมาตรฐาน */
   scale?: number
+  /**
+   * ทิศทางที่เข็มแทงเข้าไป เป็น unit vector ใน local space ของโมเดล
+   * null/undefined = ยังไม่ระบุ แสดงเป็นหมุดกลมอย่างเดียว
+   */
+  dir?: { x: number; y: number; z: number } | null
 }
 
 /** รัศมีหมุดมาตรฐาน เทียบกับด้านที่ยาวที่สุดของโมเดล */
@@ -24,6 +29,19 @@ const PIN_RADIUS = 0.006
 
 /** เลื่อนจุดหมุนออกจากกลางโมเดลได้ไกลสุดเท่าไร (เท่าของด้านที่ยาวที่สุด) */
 const PAN_LIMIT = 0.6
+
+/**
+ * ขนาดเข็ม เทียบกับด้านที่ยาวที่สุดของโมเดล
+ * ความยาวเป็นค่าคงที่เชิงสัญลักษณ์ ตั้งใจไม่ผูกกับความลึกเป็น cun
+ * เพราะ cun เป็นหน่วยสัมพัทธ์กับตัวสัตว์แต่ละตัว ส่วนโมเดลเป็นตัวกลาง ๆ ที่ไม่มีขนาดจริง
+ * ถ้าวาดตามสเกลจะกลายเป็นบอกความลึกที่เชื่อไม่ได้ — ความลึกอ่านจาก needle_th เหมือนเดิม
+ */
+const NEEDLE = {
+  shaftLen: 0.085,
+  shaftRadius: 0.0022,
+  handleLen: 0.03,
+  handleRadius: 0.0048,
+}
 
 /** แคปภาพฉากตามมุมที่เห็นอยู่ คืน JPEG blob (null ถ้าฉากยังไม่พร้อม) */
 export type AtlasCapture = (opts?: { soloSelected?: boolean }) => Promise<Blob | null>
@@ -51,7 +69,11 @@ type Props = {
   onSelectMarker?: (id: string) => void
   /** โหมดแอดมิน: คลิกบนตัวสัตว์แล้วได้พิกัดกลับไป */
   pickMode?: boolean
-  onPick?: (p: { x: number; y: number; z: number }) => void
+  /**
+   * n = normal ของผิวตรงที่คลิก ชี้ออกนอกตัว (unit vector ใน local space ของโมเดล)
+   * กลับด้านแล้วได้ทิศแทงตั้งฉาก ซึ่งเป็นท่ามาตรฐานของจุดส่วนใหญ่
+   */
+  onPick?: (p: { x: number; y: number; z: number; nx: number; ny: number; nz: number }) => void
   className?: string
   loadingText?: string
   errorText?: string
@@ -66,6 +88,7 @@ const COLOR = {
   selected: 0xb6452a,
   body: 0xd9d3c4,
   stage: 0xf4f1e8,
+  needle: 0x7c8287,
 }
 
 /**
@@ -106,10 +129,16 @@ export default function AtlasStage({
   // หมุดทุกอันใช้ทรงกลมหนึ่งใบกับวัสดุสามสีร่วมกัน แล้วย่อ/ขยายเอา
   // (วาดหมุดใหม่ทุกครั้งที่เลือกจุด ถ้าสร้าง geometry ใหม่ทุกรอบจะรั่ว)
   const pinGeoRef = useRef<THREE.SphereGeometry | null>(null)
+  // เข็มใช้ทรงกระบอกสองใบร่วมกันทุกจุด วางให้โคนอยู่ที่ origin แล้วหันตามทิศทางเอา
+  const needleGeoRef = useRef<{
+    shaft: THREE.CylinderGeometry
+    handle: THREE.CylinderGeometry
+  } | null>(null)
   const matsRef = useRef<{
     verified: THREE.MeshBasicMaterial
     pending: THREE.MeshBasicMaterial
     selected: THREE.MeshBasicMaterial
+    steel: THREE.MeshBasicMaterial
   } | null>(null)
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -251,10 +280,29 @@ export default function AtlasStage({
     scene.add(pins)
 
     pinGeoRef.current = new THREE.SphereGeometry(1, 16, 12)
+    // ทรงกระบอกของ three วางตามแกน Y และอยู่กึ่งกลาง — เลื่อนให้เริ่มที่ y = 0
+    // เวลาใช้จึงแค่วางโคนไว้ที่ผิวหนังแล้วหมุน +Y ให้ชี้ออกนอกตัว
+    const shaft = new THREE.CylinderGeometry(
+      NEEDLE.shaftRadius,
+      NEEDLE.shaftRadius,
+      NEEDLE.shaftLen,
+      8
+    )
+    shaft.translate(0, NEEDLE.shaftLen / 2, 0)
+    const handle = new THREE.CylinderGeometry(
+      NEEDLE.handleRadius,
+      NEEDLE.handleRadius,
+      NEEDLE.handleLen,
+      6
+    )
+    handle.translate(0, NEEDLE.shaftLen + NEEDLE.handleLen / 2, 0)
+    needleGeoRef.current = { shaft, handle }
+
     matsRef.current = {
       verified: new THREE.MeshBasicMaterial({ color: COLOR.verified }),
       pending: new THREE.MeshBasicMaterial({ color: COLOR.pending }),
       selected: new THREE.MeshBasicMaterial({ color: COLOR.selected }),
+      steel: new THREE.MeshBasicMaterial({ color: COLOR.needle }),
     }
 
     sceneRef.current = scene
@@ -393,8 +441,21 @@ export default function AtlasStage({
 
       if (!pickModeRef.current || !onPickRef.current) return
       if (found?.kind !== 'body') return
-      const local = modelRef.current.worldToLocal(found.hit.point.clone())
-      onPickRef.current({ x: local.x, y: local.y, z: local.z })
+      const hit = found.hit
+      const model = modelRef.current
+      const local = model.worldToLocal(hit.point.clone())
+      // normal ของหน้าสามเหลี่ยมอยู่ใน local space ของเมชนั้น ต้องผ่าน world ก่อน
+      // แล้วค่อยแปลงกลับเข้า local space ของโมเดล ซึ่งเป็นระบบพิกัดที่เราเก็บลงฐานข้อมูล
+      const n = new THREE.Vector3(0, 1, 0)
+      if (hit.face) {
+        n.copy(hit.face.normal)
+          .applyNormalMatrix(new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld))
+          .applyNormalMatrix(
+            new THREE.Matrix3().getNormalMatrix(model.matrixWorld.clone().invert())
+          )
+          .normalize()
+      }
+      onPickRef.current({ x: local.x, y: local.y, z: local.z, nx: n.x, ny: n.y, nz: n.z })
     }
 
     // Shift + ลาก = เลื่อนภาพ ทั้งที่ยังอยู่โหมดหมุน (ทางลัดที่คนใช้โปรแกรม 3D คุ้นมือ)
@@ -433,6 +494,7 @@ export default function AtlasStage({
       renderer.dispose()
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement)
       pinGeoRef.current = null
+      needleGeoRef.current = null
       matsRef.current = null
       modelRef.current = null
       bodyRef.current = []
@@ -471,6 +533,7 @@ export default function AtlasStage({
     if (!geo || !mats) return
 
     const base = sizeRef.current * PIN_RADIUS
+    const needleGeo = needleGeoRef.current
     for (const mk of markers) {
       const isSel = mk.id === selectedId
       // ตอนแอดมินกำลังปรับขนาด หมุดที่เลือกต้องเป็นขนาดจริง ไม่งั้นปรับแล้วอ่านผลไม่ได้
@@ -479,12 +542,38 @@ export default function AtlasStage({
       const r = base * (mk.scale ?? 1) * emphasis
       const sides = mk.bilateral ? [1, -1] : [1]
       for (const s of sides) {
+        const at = model.localToWorld(new THREE.Vector3(mk.x * s, mk.y, mk.z))
         const pin = new THREE.Mesh(geo, isSel ? mats.selected : mk.verified ? mats.verified : mats.pending)
         pin.scale.setScalar(r)
-        pin.position.copy(model.localToWorld(new THREE.Vector3(mk.x * s, mk.y, mk.z)))
+        pin.position.copy(at)
         pin.renderOrder = isSel ? 2 : 1
         pin.userData.pointId = mk.id
         pins.add(pin)
+
+        // เข็มขึ้นเฉพาะจุดที่เลือก — ถ้าขึ้นทุกจุดพร้อมกัน สามร้อยกว่าเล่มจะรกจนอ่านไม่ออก
+        // หมุดกลมทำหน้าที่เป็นแผนที่ เข็มทำหน้าที่บอกมุมแทงของจุดที่กำลังดู
+        // และหมุดกลมยังอยู่ตรงผิวหนังเหมือนเดิม จึงยังเป็นพื้นที่ให้แตะได้ง่ายเท่าเดิม
+        if (!isSel || !mk.dir || !needleGeo) continue
+        const inward = new THREE.Vector3(mk.dir.x * s, mk.dir.y, mk.dir.z)
+        if (inward.lengthSq() < 1e-12) continue
+        // เข็มโผล่ออกนอกตัวสัตว์ ปลายจิ้มอยู่ที่จุด — วาดจมเข้าไปในตัวจะมองไม่เห็นอะไรเลย
+        const outward = inward.normalize().transformDirection(model.matrixWorld).negate()
+
+        const needle = new THREE.Group()
+        needle.position.copy(at)
+        needle.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward)
+        needle.scale.setScalar(sizeRef.current * (mk.scale ?? 1))
+        const shaft = new THREE.Mesh(needleGeo.shaft, mats.steel)
+        const handle = new THREE.Mesh(needleGeo.handle, mats.selected)
+        // เข็มเป็นภาพประกอบล้วน ๆ ต้องไม่กินคลิก ไม่งั้นมันบังตัวสัตว์ที่อยู่ข้างหลัง
+        // ทำให้แอดมินคลิกปักตรงนั้นไม่ได้ ส่วนหมุดกลมที่ปลายเข็มยังเป็นพื้นที่กดเหมือนเดิม
+        shaft.raycast = () => {}
+        handle.raycast = () => {}
+        needle.add(shaft, handle)
+        needle.renderOrder = 2
+        // ให้ตอนแคปภาพแบบเหลือจุดเดียวรู้ว่าเข็มเล่มนี้เป็นของจุดไหน
+        needle.userData.pointId = mk.id
+        pins.add(needle)
       }
     }
 

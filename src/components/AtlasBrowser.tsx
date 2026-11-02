@@ -98,6 +98,11 @@ export default function AtlasBrowser({
         bilateral: p.bilateral,
         verified: p.verified,
         scale: p.size_scale,
+        // เข็มขึ้นเฉพาะจุดที่ผู้ใช้เลือก ตัวฉากเป็นคนตัดสิน ที่นี่แค่ส่งทิศทางไปให้
+        dir:
+          p.dir_x !== null && p.dir_y !== null && p.dir_z !== null
+            ? { x: p.dir_x, y: p.dir_y, z: p.dir_z }
+            : null,
       })),
     [points]
   )
