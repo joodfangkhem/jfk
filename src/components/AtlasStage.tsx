@@ -25,6 +25,9 @@ const PIN_RADIUS = 0.006
 /** เลื่อนจุดหมุนออกจากกลางโมเดลได้ไกลสุดเท่าไร (เท่าของด้านที่ยาวที่สุด) */
 const PAN_LIMIT = 0.6
 
+/** แคปภาพฉากตามมุมที่เห็นอยู่ คืน JPEG blob (null ถ้าฉากยังไม่พร้อม) */
+export type AtlasCapture = (opts?: { soloSelected?: boolean }) => Promise<Blob | null>
+
 export type AtlasLabels = {
   rotate: string
   pan: string
@@ -53,6 +56,8 @@ type Props = {
   loadingText?: string
   errorText?: string
   labels?: AtlasLabels
+  /** ส่งฟังก์ชันแคปภาพกลับให้ผู้เรียกตอนฉากพร้อม และส่ง null ตอนถอดออก */
+  onCaptureReady?: (capture: AtlasCapture | null) => void
 }
 
 const COLOR = {
@@ -79,6 +84,7 @@ export default function AtlasStage({
   loadingText = 'กำลังโหลดโมเดล…',
   errorText = 'โหลดโมเดลไม่สำเร็จ',
   labels = TH_LABELS,
+  onCaptureReady,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
@@ -95,6 +101,8 @@ export default function AtlasStage({
   const focusRef = useRef<THREE.Vector3 | null>(null)
   /** โหมดเลื่อนเปิดอยู่ไหม — listener ที่ผูกครั้งเดียวต้องอ่านค่าล่าสุด */
   const panModeRef = useRef(false)
+  const selectedIdRef = useRef<string | null | undefined>(selectedId)
+  const onCaptureReadyRef = useRef(onCaptureReady)
   // หมุดทุกอันใช้ทรงกลมหนึ่งใบกับวัสดุสามสีร่วมกัน แล้วย่อ/ขยายเอา
   // (วาดหมุดใหม่ทุกครั้งที่เลือกจุด ถ้าสร้าง geometry ใหม่ทุกรอบจะรั่ว)
   const pinGeoRef = useRef<THREE.SphereGeometry | null>(null)
@@ -117,7 +125,9 @@ export default function AtlasStage({
     pickModeRef.current = pickMode
     onPickRef.current = onPick
     onSelectRef.current = onSelectMarker
-  }, [pickMode, onPick, onSelectMarker])
+    selectedIdRef.current = selectedId
+    onCaptureReadyRef.current = onCaptureReady
+  }, [pickMode, onPick, onSelectMarker, selectedId, onCaptureReady])
 
   const fit = useCallback(() => {
     const model = modelRef.current
@@ -157,6 +167,41 @@ export default function AtlasStage({
     )
     camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist))
     controls.update()
+  }, [])
+
+  /**
+   * แคปภาพจากมุมที่เห็นอยู่ — แอดมินใช้เก็บรูปตำแหน่งจุดไปใส่หน้ารายละเอียด
+   * soloSelected = ซ่อนหมุดจุดอื่นไว้ก่อน รูปที่ไปอยู่ในหน้าจุดควรมีหมุดเดียว
+   * ไม่งั้นคนอ่านแยกไม่ออกว่าหมุดไหนคือจุดที่กำลังดู
+   */
+  const capture = useCallback<AtlasCapture>(async (opts) => {
+    const renderer = rendererRef.current
+    const scene = sceneRef.current
+    const camera = cameraRef.current
+    const pins = pinsRef.current
+    if (!renderer || !scene || !camera) return null
+
+    const hidden: THREE.Object3D[] = []
+    if (opts?.soloSelected && pins) {
+      for (const pin of pins.children) {
+        if (pin.visible && pin.userData.pointId !== selectedIdRef.current) {
+          pin.visible = false
+          hidden.push(pin)
+        }
+      }
+    }
+
+    // ไม่ได้เปิด preserveDrawingBuffer จึงต้องวาดแล้วอ่านบัฟเฟอร์ในจังหวะเดียวกัน
+    // ใช้ toDataURL ที่ทำงานแบบ synchronous ไม่ใช่ toBlob ซึ่งคืนค่าทีหลัง
+    // ตอนนั้นบัฟเฟอร์อาจถูกล้างไปแล้วและได้ภาพดำ
+    let url: string
+    try {
+      renderer.render(scene, camera)
+      url = renderer.domElement.toDataURL('image/jpeg', 0.9)
+    } finally {
+      for (const pin of hidden) pin.visible = true
+    }
+    return fetch(url).then((r) => r.blob())
   }, [])
 
   // ---- ตั้งฉาก (ทำครั้งเดียวต่อโมเดลหนึ่งตัว)
@@ -406,6 +451,13 @@ export default function AtlasStage({
     controls.touches.ONE = pan ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE
     if (renderer) renderer.domElement.style.cursor = pan ? 'grab' : 'default'
   }, [mode])
+
+  useEffect(() => {
+    const cb = onCaptureReadyRef.current
+    if (!cb) return
+    cb(status === 'ready' ? capture : null)
+    return () => cb(null)
+  }, [status, capture])
 
   // ---- วาดหมุดใหม่เมื่อรายการจุดหรือจุดที่เลือกเปลี่ยน
   useEffect(() => {

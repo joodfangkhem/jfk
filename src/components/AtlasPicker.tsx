@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { ChevronRight, Crosshair, Trash2 } from 'lucide-react'
+import { Camera, ChevronRight, Crosshair, ExternalLink, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
-import { revalidateAtlas } from '@/lib/revalidate'
+import { revalidateAtlas, revalidatePoint } from '@/lib/revalidate'
+import type { AtlasCapture } from '@/components/AtlasStage'
 import type { SpeciesModel } from '@/lib/types'
 
 const AtlasStage = dynamic(() => import('@/components/AtlasStage'), {
@@ -56,6 +57,11 @@ export default function AtlasPicker({
   const [onlyMissing, setOnlyMissing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  // ฉากส่งฟังก์ชันแคปภาพกลับมาเมื่อโมเดลโหลดเสร็จ เก็บใน ref เพราะไม่ต้อง re-render ตาม
+  const captureRef = useRef<AtlasCapture | null>(null)
+  const onCaptureReady = useCallback((fn: AtlasCapture | null) => {
+    captureRef.current = fn
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
@@ -195,6 +201,83 @@ export default function AtlasPicker({
     toast.success('ลบพิกัดแล้ว')
   }
 
+  /**
+   * เก็บภาพจากมุมที่เห็นอยู่เข้าคลังรูปของจุดนั้น
+   * ใช้ทางเดียวกับการอัปโหลดรูปถ่ายใน PointGalleryManager ทุกอย่าง
+   * (bucket point-images → แถวใน point_images → ตั้งรูปหลักถ้ายังไม่มีรูป → สะกิดแคช)
+   */
+  const shoot = async () => {
+    if (!selected || !selectedCoord) return
+    const capture = captureRef.current
+    if (!capture) {
+      toast.error('โมเดลยังโหลดไม่เสร็จ')
+      return
+    }
+    setBusy(true)
+    try {
+      const { count, error: countErr } = await supabase
+        .from('point_images')
+        .select('id', { count: 'exact', head: true })
+        .eq('point_id', selected.id)
+      if (countErr) {
+        toast.error(countErr.message)
+        return
+      }
+      const n = count ?? 0
+      if (n >= 6) {
+        toast.error('จุดนี้มีรูปครบ 6 รูปแล้ว ลบรูปเก่าก่อนถึงจะเพิ่มได้')
+        return
+      }
+
+      const blob = await capture({ soloSelected: true })
+      if (!blob) {
+        toast.error('แคปภาพไม่สำเร็จ')
+        return
+      }
+
+      // ชื่อไฟล์ต้องไม่ซ้ำ จึงใช้เวลาปัจจุบัน — อยู่ใน event handler ไม่ใช่ตอน render
+      const path = `atlas/${selected.slug}-${species}-${Date.now()}.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('point-images')
+        .upload(path, blob, {
+          cacheControl: '31536000',
+          contentType: 'image/jpeg',
+          upsert: false,
+        })
+      if (upErr) {
+        toast.error('อัปโหลดไม่สำเร็จ: ' + upErr.message)
+        return
+      }
+
+      const { data: pub } = supabase.storage.from('point-images').getPublicUrl(path)
+      const { data: row, error } = await supabase
+        .from('point_images')
+        .insert({
+          point_id: selected.id,
+          image_url: pub.publicUrl,
+          storage_path: path,
+          caption: `ตำแหน่ง ${selected.code} บนโมเดล 3 มิติ (${model?.label_th ?? species})`,
+          // โมเดลเป็น CC BY ภาพที่เรนเดอร์ออกมาเป็นงานดัดแปลง ต้องให้เครดิตเหมือนกัน
+          credit: model?.credit ?? null,
+          sort_order: n,
+        })
+        .select('id')
+        .single()
+      if (error) {
+        toast.error(error.message)
+        return
+      }
+      if (n === 0 && row) {
+        await supabase.rpc('set_primary_point_image', { img_id: row.id })
+      }
+      // หน้าจุดฝั่ง public แคชยาว ต้องสะกิดให้สร้างใหม่ ไม่งั้นรูปขึ้นก็ต่อเมื่อแคชหมดอายุ
+      await revalidatePoint(selected.slug)
+      toast.success(n === 0 ? 'เก็บรูปแล้ว ตั้งเป็นรูปหลักของจุดนี้ให้เลย' : 'เก็บรูปเข้าหน้าจุดแล้ว')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const nextMissing = () => {
     const i = speciesPoints.findIndex((p) => p.id === selectedId)
     const after = speciesPoints.slice(i + 1).find((p) => !map[key(p.id, species)])
@@ -245,6 +328,7 @@ export default function AtlasPicker({
             onSelectMarker={setSelectedId}
             pickMode={Boolean(selected)}
             onPick={onPick}
+            onCaptureReady={onCaptureReady}
             className="relative w-full h-[320px] sm:h-[460px]"
           />
           <p className="absolute left-3 top-3 text-[11px] bg-surface/90 border border-border rounded-md px-2 py-1 pointer-events-none max-w-[70%]">
@@ -368,6 +452,29 @@ export default function AtlasPicker({
                   >
                     <Trash2 size={12} /> ลบพิกัด
                   </button>
+                </div>
+
+                <div className="flex gap-2 flex-wrap items-center pt-1 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={shoot}
+                    disabled={busy}
+                    className="chip hover:border-primary hover:text-primary disabled:opacity-50"
+                  >
+                    <Camera size={12} /> {busy ? 'กำลังทำงาน…' : 'แคปมุมนี้เข้าหน้าจุด'}
+                  </button>
+                  <a
+                    href={`/admin/points/${selected.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="chip hover:border-primary hover:text-primary"
+                  >
+                    คลังรูปของจุดนี้ <ExternalLink size={12} />
+                  </a>
+                  <p className="text-xs text-muted basis-full leading-relaxed">
+                    แคปตามมุมที่เห็นอยู่บนฉาก (ซ่อนหมุดจุดอื่นให้เอง) — ซูมกับหมุนให้ได้มุมที่ต้องการก่อนกด
+                    รูปแรกของจุดจะถูกตั้งเป็นรูปหลักอัตโนมัติ
+                  </p>
                 </div>
               </>
             )}
