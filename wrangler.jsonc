@@ -51,7 +51,7 @@
   // ต้องขยับเลขนี้ด้วย (favicon.ico ไม่ติด เพราะเป็นไฟล์สแตติกใน .open-next/assets)
   // ของเก่าใน buildId ก่อนหน้าจะกลายเป็นขยะใน R2 ลบทิ้งทีหลังได้ผ่านแดชบอร์ด
   "vars": {
-    "OPEN_NEXT_BUILD_ID": "jfk-3"
+    "OPEN_NEXT_BUILD_ID": "jfk-4"
   },
   "images": {
     "binding": "IMAGES"
