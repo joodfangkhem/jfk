@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ExternalLink, RotateCcw } from 'lucide-react'
 import AtlasVerifyButton from '@/components/AtlasVerifyButton'
 import type { AtlasPoint, SpeciesModel } from '@/lib/types'
-import { lp, t, type Locale } from '@/lib/i18n'
+import { foldTones, lp, t, type Locale } from '@/lib/i18n'
 
 // three ~600 KB — โหลดเฉพาะตอนผู้ใช้เปิดหน้านี้จริง และต้องปิด ssr เพราะใช้ WebGL
 const AtlasStage = dynamic(() => import('@/components/AtlasStage'), {
@@ -78,12 +78,13 @@ export default function AtlasBrowser({
   const selected = points.find((p) => p.id === selectedId) ?? null
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase().replace(/[-\s]/g, '')
+    const norm = (v: string) => foldTones(v).toLowerCase().replace(/[-\s]/g, '')
+    const q = norm(query.trim())
     if (!q) return points
     return points.filter((p) =>
       [p.code, p.name_th, p.name_en, p.name_pinyin]
         .filter((v): v is string => Boolean(v))
-        .some((v) => v.toLowerCase().replace(/[-\s]/g, '').includes(q))
+        .some((v) => norm(v).includes(q))
     )
   }, [points, query])
 
@@ -108,7 +109,7 @@ export default function AtlasBrowser({
   )
 
   const label = (p: AtlasPoint) =>
-    (locale === 'en' ? p.name_en : p.name_th) || p.name_pinyin || p.code
+    (locale === 'en' ? p.name_pinyin || p.name_en : p.name_th || p.name_pinyin) || p.code
 
   return (
     <div className="space-y-4">

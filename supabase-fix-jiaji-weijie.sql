@@ -16,9 +16,9 @@
 update points set
   code        = 'WEI-JIE',
   slug        = 'wei-jie',
-  name_th     = 'เหว่ยเจี๋ย',
+  name_th     = 'Wěi Jié',
   name_en     = 'Wei Jie (tail vertebrae)',
-  name_pinyin = 'Wei Jie',
+  name_pinyin = 'Wěi Jié',
   name_zh     = '尾杰',
   location_th = 'แนวกลางหลัง ที่โคนหาง ในช่องระหว่างกระดูกหางข้อที่ 1 และ 2 (Cd1-Cd2)',
   anatomy_th  = 'ช่องระหว่างกระดูกหางข้อที่ 1 และ 2 บนแนวกลาง',
@@ -46,7 +46,7 @@ where cp.condition_id = c.id and cp.point_id = p.id
 -- ตำราแยกเจี๊ยจี่เป็นสองชุด ชุดลำตัวคือ Hua-tuo-jia-ji ครอบคลุม T1-L7 เท่านั้น
 -- ข้อบ่งใช้เรื่องคอจึงย้ายไปอยู่กับชุดคอที่เพิ่มด้านล่าง
 update points set
-  name_th     = 'ฮวาถัวเจี๊ยจี่ (เจี๊ยจี่ลำตัว)',
+  name_th     = 'Huà Tuó Jiā Jǐ (ลำตัว)',
   name_en     = 'Hua Tuo Jia Ji (thoracolumbar paravertebral)',
   functions_th = 'เปิดทางเดินลมปราณตามแนวสันหลังช่วงอกและเอว ใช้ปักคร่อมระดับที่มีพยาธิสภาพ',
   functions_en = 'Opens the channels along the thoracolumbar spine; needled around the affected level',

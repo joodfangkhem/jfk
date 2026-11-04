@@ -898,3 +898,16 @@ export const CATEGORY_LABEL_I18N: Record<Locale, Record<string, string>> = {
   th: { neuro: 'ระบบประสาท', ortho: 'กระดูกและข้อ', gi: 'ทางเดินอาหาร', uro: 'ทางเดินปัสสาวะ', resp: 'ระบบหายใจ', derm: 'ผิวหนัง', behavior: 'พฤติกรรม', other: 'อื่นๆ' },
   en: { neuro: 'Neurology', ortho: 'Musculoskeletal', gi: 'Gastrointestinal', uro: 'Urinary', resp: 'Respiratory', derm: 'Skin', behavior: 'Behaviour', other: 'Other' },
 }
+
+/**
+ * ตัดวรรณยุกต์พินอินออกเพื่อใช้เทียบตอนค้นหา — ชื่อจุดโชว์เป็น Yángxī แต่คีย์บอร์ดปกติ
+ * พิมพ์ได้แค่ yangxi จึงต้องเทียบกันที่รูปไม่มีวรรณยุกต์ (ü นับเป็น u ด้วย)
+ * ฝั่งฐานข้อมูลทำเรื่องเดียวกันด้วย translate() ใน trigger points_fill_search_text()
+ */
+export function foldTones(s: string) {
+  return s
+    .replace(/ü/g, 'u')
+    .replace(/Ü/g, 'U')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+}

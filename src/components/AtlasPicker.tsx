@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { revalidateAtlas, revalidatePoint } from '@/lib/revalidate'
 import type { AtlasCapture } from '@/components/AtlasStage'
 import type { SpeciesModel } from '@/lib/types'
+import { foldTones } from '@/lib/i18n'
 
 const AtlasStage = dynamic(() => import('@/components/AtlasStage'), {
   ssr: false,
@@ -87,13 +88,14 @@ export default function AtlasPicker({
   )
 
   const listed = useMemo(() => {
-    const q = filter.trim().toLowerCase().replace(/[-\s]/g, '')
+    const norm = (v: string) => foldTones(v).toLowerCase().replace(/[-\s]/g, '')
+    const q = norm(filter.trim())
     return speciesPoints.filter((p) => {
       if (onlyMissing && map[key(p.id, species)]) return false
       if (!q) return true
       return [p.code, p.name_th, p.name_pinyin]
         .filter((v): v is string => Boolean(v))
-        .some((v) => v.toLowerCase().replace(/[-\s]/g, '').includes(q))
+        .some((v) => norm(v).includes(q))
     })
   }, [speciesPoints, filter, onlyMissing, map, species])
 

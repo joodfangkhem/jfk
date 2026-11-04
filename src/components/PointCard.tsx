@@ -11,7 +11,8 @@ export default function PointCard({
   note?: string | null
   locale?: Locale
 }) {
-  const name = locale === 'en' ? point.name_en || point.name_pinyin || point.code : point.name_th || point.name_pinyin || point.code
+  // เรียกจุดด้วย pinyin ทั้งสองภาษา (ไทยอ่านจาก name_th เพราะบางจุดมีวงเล็บหมายเหตุไทยต่อท้าย)
+  const name = (locale === 'en' ? point.name_pinyin || point.name_en : point.name_th || point.name_pinyin) || point.code
   const summary = note || pick(locale, point.functions_th, point.functions_en) || pick(locale, point.location_th, point.location_en)
   const inds = pickArr(locale, point.indications, point.indications_en)
   return (

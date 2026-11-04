@@ -97,7 +97,8 @@ export default async function ProtocolPage({
               <Link href={lp(locale, `/points/${r.points.slug}`)} className="min-w-0 flex-1">
                 <p className="font-semibold text-sm">
                   <span className="text-primary">{r.points.code}</span>{' '}
-                  {(locale === 'en' ? r.points.name_en : r.points.name_th) || r.points.name_pinyin}
+                  {(locale === 'en' ? r.points.name_pinyin || r.points.name_en : r.points.name_th) ||
+                    r.points.name_pinyin}
                 </p>
                 <p className="text-xs text-muted mt-0.5 line-clamp-2 leading-relaxed">
                   {pick(locale, r.points.location_th, r.points.location_en)}

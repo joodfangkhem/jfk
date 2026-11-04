@@ -45,8 +45,9 @@ export async function generateMetadata({
   const point = await getPoint(slug)
   if (!point) return { title: locale === 'en' ? 'Point Not Found' : 'ไม่พบจุดนี้' }
 
-  const localName = locale === 'en' ? point.name_en : point.name_th
-  const name = [point.code, localName, point.name_pinyin].filter(Boolean).join(' ')
+  // ทั้งสองภาษาเรียกจุดด้วย pinyin (ไทยเก็บไว้ใน name_th เพราะมีวงเล็บหมายเหตุไทยบางจุด)
+  const localName = locale === 'en' ? point.name_pinyin || point.name_en : point.name_th || point.name_pinyin
+  const name = [point.code, localName, point.name_en].filter(Boolean).join(' ')
   const tail = locale === 'en' ? 'Veterinary Acupuncture Point' : 'จุดฝังเข็มในสัตว์'
   const desc = (
     locale === 'en'
@@ -86,7 +87,7 @@ export default async function PointPage({
   ])
   const meridian = meridians.find((m) => m.code === point.meridian_code)
 
-  const localName = locale === 'en' ? point.name_en : point.name_th
+  const localName = locale === 'en' ? point.name_pinyin || point.name_en : point.name_th || point.name_pinyin
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -133,9 +134,8 @@ export default async function PointPage({
               {localName || point.name_pinyin || point.code}
             </h1>
             <p className="text-sm text-muted mt-0.5">
-              {[point.name_pinyin, point.name_zh, locale === 'en' ? point.name_th : point.name_en]
-                .filter(Boolean)
-                .join(' · ')}
+              {/* ชื่อหลักเป็น pinyin ทั้งสองภาษาแล้ว บรรทัดนี้จึงเหลือจีนกับคำแปลอังกฤษ */}
+              {[point.name_zh, point.name_en].filter(Boolean).join(' · ')}
             </p>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default async function PointPage({
       <ReportIssue
         pointId={point.id}
         slug={point.slug}
-        targetLabel={`${point.code} ${pick(locale, point.name_th, point.name_en)}`}
+        targetLabel={`${point.code} ${point.name_pinyin ?? ''}`.trim()}
         showPhotoHint
         locale={locale}
       />
