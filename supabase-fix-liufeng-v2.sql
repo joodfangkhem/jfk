@@ -1,12 +1,12 @@
 -- =============================================================
 -- JFK — จัดโครงสร้างจุดง่ามนิ้วใหม่ให้ถูกต้อง
 --
--- LIU-FENG (六縫 ลิ่วเฝิง) = จุดของสัตว์ มีทั้งขาหน้าและขาหลัง
+-- LIU-FENG (六缝 ลิ่วเฝิง) = จุดของสัตว์ มีทั้งขาหน้าและขาหลัง
 --   สุนัขใช้นิ้ว 4 นิ้ว จึงมีง่ามนิ้วข้างละ 3 รวมเท้าหน้าสองข้าง 6 จุด
 --   และเท้าหลังสองข้างอีก 6 จุด ตำราเรียกรวมว่า Liu-feng ชื่อเดียว
 --   แล้วระบุว่าใช้ชุดขาหน้าหรือขาหลัง
 --
--- BA-FENG (八風 ปาเฟิง) = จุดของคน ไม่ใช่จุดในสัตว์
+-- BA-FENG (八风 ปาเฟิง) = จุดของคน ไม่ใช่จุดในสัตว์
 --   คนมีนิ้วเท้า 5 นิ้ว จึงมีง่ามนิ้วข้างละ 4 รวมสองข้าง 8 จุด
 --   ของเดิมใส่ไว้เป็นจุดในสัตว์ ซึ่งไม่ถูก
 --
@@ -19,7 +19,7 @@ update points set
   name_th     = 'ลิ่วเฝิง',
   name_en     = 'Liu Feng (web points)',
   name_pinyin = 'Liu Feng',
-  name_zh     = '六縫',
+  name_zh     = '六缝',
   location_th = 'ที่รอยพับผิวหนังระหว่างนิ้ว ด้านหลังมือและด้านหลังเท้า ตรงระดับข้อนิ้ว (metacarpophalangeal และ metatarsophalangeal) ระหว่างนิ้วที่ 2-3, 3-4 และ 4-5 เท้าละ 3 จุด — ขาหน้าสองข้างรวม 6 จุด ขาหลังสองข้างอีก 6 จุด เวลาใช้ให้เลือกชุดขาหน้าหรือขาหลังตามอาการ',
   anatomy_th  = 'รอยพับผิวหนังระหว่างนิ้ว ระดับข้อนิ้ว ทั้งเท้าหน้าและเท้าหลัง',
   functions_th = 'ระบายความร้อนและความชื้นที่ปลายขา ลดบวม ลดคัน ใช้กับเท้าอักเสบและรายที่เลียเท้าไม่หยุด · ชุดขาหน้าใช้กับปัญหาขาหน้า ชุดขาหลังใช้กับปัญหาขาหลัง',
@@ -38,14 +38,14 @@ update points set
   name_th     = 'ปาเฟิง (จุดของคน)',
   name_en     = 'Ba Feng (a human point)',
   name_pinyin = 'Ba Feng',
-  name_zh     = '八風',
+  name_zh     = '八风',
   location_th = 'เป็นจุดในวิชาฝังเข็มของคน อยู่ที่รอยพับผิวหนังระหว่างนิ้วเท้าทั้งสี่ง่ามของแต่ละข้าง รวมสองข้าง 8 จุด — ชื่อ "ปา" (八) แปลว่าแปด ตามจำนวนจุดที่มี',
   anatomy_th  = 'ง่ามนิ้วเท้าคน ข้างละ 4 ง่าม',
-  functions_th = 'จุดนี้ไม่ใช่จุดที่ใช้ในสัตว์ เพราะคนมีนิ้วเท้า 5 นิ้ว จึงมีง่ามนิ้วข้างละ 4 รวม 8 จุด ส่วนสุนัขใช้นิ้วเพียง 4 นิ้ว มีง่ามนิ้วข้างละ 3 รวม 6 จุด จุดชุดเดียวกันในสัตว์จึงเรียกว่า ลิ่วเฝิง (六縫) ตามจำนวนที่มีจริง',
+  functions_th = 'จุดนี้ไม่ใช่จุดที่ใช้ในสัตว์ เพราะคนมีนิ้วเท้า 5 นิ้ว จึงมีง่ามนิ้วข้างละ 4 รวม 8 จุด ส่วนสุนัขใช้นิ้วเพียง 4 นิ้ว มีง่ามนิ้วข้างละ 3 รวม 6 จุด จุดชุดเดียวกันในสัตว์จึงเรียกว่า ลิ่วเฝิง (六缝) ตามจำนวนที่มีจริง',
   caution_th  = 'อย่าใช้ชื่อนี้กับสัตว์ ให้ใช้ ลิ่วเฝิง (LIU-FENG) แทน',
   location_en = 'A point from human acupuncture, at the skin folds between the toes — four webs per foot, eight points across both. The name Ba (八) means eight, after the number of points.',
   anatomy_en  = 'Human toe webs, four per foot',
-  functions_en = 'This is not a point used in animals. A person has five toes, giving four webs per foot and eight points. A dog uses four digits, giving three webs per foot and six points, so the equivalent canine point is Liu Feng (六縫), named for the number it actually has.',
+  functions_en = 'This is not a point used in animals. A person has five toes, giving four webs per foot and eight points. A dog uses four digits, giving three webs per foot and six points, so the equivalent canine point is Liu Feng (六缝), named for the number it actually has.',
   caution_en  = 'Do not use this name in animals — use Liu Feng (LIU-FENG) instead.',
   point_types    = '{"จุดในคน ไม่ใช่จุดในสัตว์"}'::text[],
   point_types_en = '{"Human point, not used in animals"}'::text[],

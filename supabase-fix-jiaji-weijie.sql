@@ -69,7 +69,7 @@ insert into points (
   species, is_common, popularity, verified, verified_source
 ) values (
   'JING-JIA-JI','jing-jia-ji','EX',null,
-  'จิงเจี๊ยจี่ (เจี๊ยจี่คอ)','Jing Jia Ji (cervical paravertebral)','Jing Jia Ji','頸夾脊',
+  'จิงเจี๊ยจี่ (เจี๊ยจี่คอ)','Jing Jia Ji (cervical paravertebral)','Jing Jia Ji','颈夹脊',
   'ด้านข้างของคอ เป็นสองแถว อยู่เหนือและใต้ปลาย transverse process ของกระดูกคอแต่ละข้อ ห่างออกไปแถวละ 0.5 cun ตลอดแนว C1 ถึง C8',
   'ด้านข้างคอ เหนือและใต้ปลาย transverse process ของ C1-C8 ห่าง 0.5 cun',
   'Two rows of points on the lateral aspect of the neck, 0.5 cun above and below the transverse process of each cervical vertebra, from C1 to C8',
