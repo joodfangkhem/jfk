@@ -286,7 +286,10 @@ const th = {
       'สิทธิ์นี้ผู้ดูแลเปิดให้เป็นรายคน ถ้าอยากช่วยตรวจข้อมูลจุดฝังเข็ม ทักมาบอกผู้ดูแลได้',
   },
   editor: {
-    nameTh: 'ชื่อไทย',
+    nameDisplay: 'ชื่อที่แสดง (พินอิน + หมายเหตุไทยถ้ามี)',
+    namePinyin: 'พินอิน',
+    nameZh: 'ชื่อจีน',
+    nameEn: 'ชื่ออังกฤษ (คำแปล)',
     location: 'ตำแหน่ง',
     landmark: 'Landmark / กายวิภาค',
     functions: 'สรรพคุณ',
@@ -714,7 +717,10 @@ const en: typeof th = {
       'The admin grants this per person. If you would like to help check the point data, just ask them.',
   },
   editor: {
-    nameTh: 'Thai name',
+    nameDisplay: 'Display name (pinyin, plus a Thai note if any)',
+    namePinyin: 'Pinyin',
+    nameZh: 'Chinese',
+    nameEn: 'English name (meaning)',
     location: 'Location (Thai)',
     landmark: 'Landmark / anatomy (Thai)',
     functions: 'Actions (Thai)',

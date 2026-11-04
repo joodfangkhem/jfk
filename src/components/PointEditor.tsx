@@ -16,6 +16,9 @@ export default function PointEditor({ point, locale = 'th' }: { point: Point; lo
   const router = useRouter()
   const [form, setForm] = useState({
     name_th: point.name_th ?? '',
+    name_pinyin: point.name_pinyin ?? '',
+    name_zh: point.name_zh ?? '',
+    name_en: point.name_en ?? '',
     location_th: point.location_th ?? '',
     anatomy_th: point.anatomy_th ?? '',
     functions_th: point.functions_th ?? '',
@@ -34,6 +37,9 @@ export default function PointEditor({ point, locale = 'th' }: { point: Point; lo
       .from('points')
       .update({
         name_th: form.name_th || null,
+        name_pinyin: form.name_pinyin || null,
+        name_zh: form.name_zh || null,
+        name_en: form.name_en || null,
         location_th: form.location_th,
         anatomy_th: form.anatomy_th || null,
         functions_th: form.functions_th || null,
@@ -60,7 +66,12 @@ export default function PointEditor({ point, locale = 'th' }: { point: Point; lo
   return (
     <div className="space-y-4">
       <section className="card p-4 space-y-3">
-        <Field label={d.nameTh} value={form.name_th} onChange={set('name_th')} />
+        <Field label={d.nameDisplay} value={form.name_th} onChange={set('name_th')} />
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label={d.namePinyin} value={form.name_pinyin} onChange={set('name_pinyin')} />
+          <Field label={d.nameZh} value={form.name_zh} onChange={set('name_zh')} />
+          <Field label={d.nameEn} value={form.name_en} onChange={set('name_en')} />
+        </div>
         <Area label={d.location} value={form.location_th} onChange={set('location_th')} rows={3} />
         <Area label={d.landmark} value={form.anatomy_th} onChange={set('anatomy_th')} rows={2} />
         <Area label={d.functions} value={form.functions_th} onChange={set('functions_th')} rows={2} />
