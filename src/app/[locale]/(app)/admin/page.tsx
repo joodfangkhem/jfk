@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Boxes, FileText, Inbox, ShieldCheck } from 'lucide-react'
+import { Boxes, FileText, Flag, Inbox, ShieldCheck, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 
@@ -67,6 +67,13 @@ on conflict (user_id) do nothing;`}
     .from('point_image_submissions')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending')
+  const { count: openFeedback } = await supabase
+    .from('feedback')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'open')
+  const { count: memberCount } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
 
   const base = lp(locale, '/admin')
   const filterHref = (extra?: string) =>
@@ -127,6 +134,30 @@ on conflict (user_id) do nothing;`}
         ) : (
           <span className="chip">{d.admin.inboxEmpty}</span>
         )}
+      </Link>
+
+      <Link
+        href={lp(locale, '/admin/feedback')}
+        className="card p-3.5 flex items-center gap-3 hover:border-primary/50 transition"
+      >
+        <Flag size={18} className="text-accent shrink-0" />
+        <span className="flex-1 text-sm font-medium">{d.fb.card}</span>
+        {openFeedback ? (
+          <span className="min-w-6 h-6 px-2 inline-flex items-center justify-center rounded-full bg-accent text-white text-xs font-bold">
+            {openFeedback}
+          </span>
+        ) : (
+          <span className="chip">{d.fb.none}</span>
+        )}
+      </Link>
+
+      <Link
+        href={lp(locale, '/admin/members')}
+        className="card p-3.5 flex items-center gap-3 hover:border-primary/50 transition"
+      >
+        <Users size={18} className="text-primary shrink-0" />
+        <span className="flex-1 text-sm font-medium">{d.members.card}</span>
+        <span className="chip">{d.members.count(memberCount ?? 0)}</span>
       </Link>
 
       <Link

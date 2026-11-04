@@ -10,6 +10,7 @@ import NoteBox from '@/components/NoteBox'
 import PointCard from '@/components/PointCard'
 import PhotoSubmit from '@/components/PhotoSubmit'
 import PointGallery from '@/components/PointGallery'
+import ReportIssue from '@/components/ReportIssue'
 import {
   getAllPoints,
   getMeridians,
@@ -252,6 +253,14 @@ export default async function PointPage({
         locale={locale}
         hasImage={images.length > 0}
         imageCount={images.length}
+      />
+
+      <ReportIssue
+        pointId={point.id}
+        slug={point.slug}
+        targetLabel={`${point.code} ${pick(locale, point.name_th, point.name_en)}`}
+        showPhotoHint
+        locale={locale}
       />
 
       <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_POINT} label={d.ad} />

@@ -5,12 +5,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, LogOut, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useMyRole } from '@/lib/useMyRole'
 import { lp, t, type Locale } from '@/lib/i18n'
 
 export default function AuthButton({ locale = 'th' }: { locale?: Locale }) {
   const d = t(locale)
   const supabase = createClient()
   const router = useRouter()
+  const role = useMyRole()
   const [email, setEmail] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [open, setOpen] = useState(false)
@@ -79,6 +81,15 @@ export default function AuthButton({ locale = 'th' }: { locale?: Locale }) {
           >
             {d.auth.protocols}
           </Link>
+          {role.isContributor && (
+            <Link
+              href={lp(locale, '/feedback')}
+              onClick={() => setOpen(false)}
+              className="block px-2 py-2 rounded-lg hover:bg-surface-2"
+            >
+              {d.auth.feedback}
+            </Link>
+          )}
           <button
             onClick={async () => {
               await supabase.auth.signOut()

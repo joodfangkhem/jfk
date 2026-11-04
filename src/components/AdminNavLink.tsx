@@ -16,8 +16,15 @@ export default function AdminNavLink({ label, locale = 'th' }: { label: string; 
     if (!isAdmin) return
     const supabase = createClient()
     let alive = true
-    supabase.rpc('pending_submission_count').then(({ data }) => {
-      if (alive && typeof data === 'number') setPending(data)
+    Promise.all([
+      supabase.rpc('pending_submission_count'),
+      supabase.rpc('open_feedback_count'),
+    ]).then(([photos, feedback]) => {
+      if (!alive) return
+      const n =
+        (typeof photos.data === 'number' ? photos.data : 0) +
+        (typeof feedback.data === 'number' ? feedback.data : 0)
+      setPending(n)
     })
     return () => {
       alive = false

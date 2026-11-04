@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import AdSlot from '@/components/AdSlot'
 import PointCard from '@/components/PointCard'
+import ReportIssue from '@/components/ReportIssue'
 import { getCondition, getConditionPoints, getConditions } from '@/lib/queries'
 import { CATEGORY_LABEL_I18N, SPECIES_LABEL_I18N, isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
 import { altLanguages } from '@/lib/site'
@@ -115,6 +116,12 @@ export default async function ConditionPage({
       )}
 
       <p className="text-xs text-muted leading-relaxed">{d.condition.note}</p>
+
+      <ReportIssue
+        target={`/conditions/${condition.slug}`}
+        targetLabel={pick(locale, condition.name_th, condition.name_en)}
+        locale={locale}
+      />
     </main>
   )
 }

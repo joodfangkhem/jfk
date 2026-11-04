@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /** หน้าที่ต้องล็อกอิน — ที่เหลือเปิดให้อ่านฟรี (ดีต่อ SEO/AdSense) */
-const PROTECTED = ['/favorites', '/protocols', '/admin']
+const PROTECTED = ['/favorites', '/protocols', '/admin', '/feedback']
 
 /**
  * ตาข่ายกันพลาดชั้นสอง — ตัวคัดจริงอยู่ที่ `config.matcher` ท้ายไฟล์

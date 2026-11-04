@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { siteUrl as base } from '@/lib/site'
 
 /** หน้าหลังล็อกอิน ไม่มีอะไรให้ Google เก็บ */
-const PRIVATE = ['/favorites', '/protocols', '/admin', '/login', '/auth']
+const PRIVATE = ['/favorites', '/protocols', '/admin', '/feedback', '/login', '/auth']
 
 /**
  * หน้าค้นหาจุดรับ ?q= ?species= ?meridian= จึงเป็น dynamic ทุกครั้ง (แคชไม่ได้)
