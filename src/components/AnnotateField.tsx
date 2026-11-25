@@ -1,0 +1,60 @@
+'use client'
+
+import { useState } from 'react'
+import { MapPinPlus } from 'lucide-react'
+import AnnotationEditor from '@/components/AnnotationEditor'
+import AnnotationOverlay from '@/components/AnnotationOverlay'
+import type { Annotations } from '@/lib/annotations'
+import { t, type Locale } from '@/lib/i18n'
+
+/** ชี้จุดบนรูปที่รออนุมัติ — ค่าติดไปกับฟอร์มอนุมัติผ่าน hidden input */
+export default function AnnotateField({
+  imageUrl,
+  code,
+  locale = 'th',
+}: {
+  imageUrl: string
+  code: string
+  locale?: Locale
+}) {
+  const d = t(locale).annotate
+  const [value, setValue] = useState<Annotations | null>(null)
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="space-y-2">
+      <input type="hidden" name="annotations" value={value ? JSON.stringify(value) : ''} />
+
+      {value && (
+        <div className="relative w-fit overflow-hidden rounded-xl border border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" className="block max-w-full max-h-80" />
+          <AnnotationOverlay {...value} />
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="h-10 px-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary-soft text-primary text-sm font-medium active:scale-95 transition"
+      >
+        <MapPinPlus size={15} /> {value ? d.editCount(value.items.length) : d.open}
+      </button>
+
+      {open && (
+        <AnnotationEditor
+          imageUrl={imageUrl}
+          code={code}
+          value={value}
+          saveLabel={d.done}
+          locale={locale}
+          onClose={() => setOpen(false)}
+          onSave={(v) => {
+            setValue(v)
+            setOpen(false)
+          }}
+        />
+      )}
+    </div>
+  )
+}

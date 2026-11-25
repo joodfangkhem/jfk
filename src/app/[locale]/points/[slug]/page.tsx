@@ -164,7 +164,7 @@ export default async function PointPage({
         </div>
       </header>
 
-      <PointGallery images={images} code={point.code} nameTh={localName} emptyTitle={d.point.noImage} emptySub={d.point.noImageSub} />
+      <PointGallery images={images} code={point.code} nameTh={localName} emptyTitle={d.point.noImage} emptySub={d.point.noImageSub} locale={locale} />
 
       {/* ตำแหน่ง */}
       {!point.verified && (

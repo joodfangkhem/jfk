@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Check, ImageOff, Inbox, X } from 'lucide-react'
+import AnnotateField from '@/components/AnnotateField'
 import { createClient } from '@/lib/supabase/server'
 import { approveSubmission, rejectSubmission } from './actions'
 import { isLocale, lp, pick, t, type Locale } from '@/lib/i18n'
@@ -145,10 +146,16 @@ export default async function SubmissionsPage({
               <form action={approveSubmission} className="space-y-2">
                 <input type="hidden" name="id" value={r.id} />
                 <input type="hidden" name="point_id" value={r.point_id} />
+                <input type="hidden" name="slug" value={r.points?.slug ?? ''} />
                 <input type="hidden" name="locale" value={locale} />
                 <input type="hidden" name="image_url" value={r.image_url} />
                 <input type="hidden" name="credit" value={r.credit ?? ''} />
                 <input type="hidden" name="storage_path" value={r.storage_path ?? ''} />
+                <AnnotateField
+                  imageUrl={r.image_url}
+                  code={r.points?.code ?? ''}
+                  locale={locale}
+                />
                 <input
                   name="caption"
                   defaultValue={r.caption ?? ''}

@@ -1,3 +1,4 @@
+import { parseAnnotations } from '@/lib/annotations'
 import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
 import type {
   Article,
@@ -118,12 +119,20 @@ export async function getPointImages(pointId: string) {
   if (!hasSupabase) return []
   const { data } = await supabasePublic
     .from('point_images')
-    .select('id, image_url, caption, credit, is_primary')
+    // '*' ตั้งใจ: ถ้าระบุ annotations ตรง ๆ แล้วยังไม่ได้รัน migration รูปจะหายทั้งเว็บ
+    .select('*')
     .eq('point_id', pointId)
     .order('is_primary', { ascending: false })
     .order('sort_order')
     .order('created_at')
-  return data ?? []
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    image_url: r.image_url as string,
+    caption: r.caption as string | null,
+    credit: r.credit as string | null,
+    is_primary: r.is_primary as boolean,
+    annotations: parseAnnotations(r.annotations),
+  }))
 }
 
 export async function getConditions(): Promise<Condition[]> {

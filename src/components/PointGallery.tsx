@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Camera } from 'lucide-react'
+import { Camera, Eye, EyeOff } from 'lucide-react'
+import AnnotationOverlay from '@/components/AnnotationOverlay'
+import type { Annotations } from '@/lib/annotations'
+import { t, type Locale } from '@/lib/i18n'
 
 export type GalleryImage = {
   id: string
@@ -9,6 +12,7 @@ export type GalleryImage = {
   caption: string | null
   credit: string | null
   is_primary: boolean
+  annotations: Annotations | null
 }
 
 /** รูปหลัก + แถบรูปย่อย แตะสลับดูได้ (หลายมุม / หลายสายพันธุ์) */
@@ -18,14 +22,17 @@ export default function PointGallery({
   nameTh,
   emptyTitle = 'ยังไม่มีรูปตำแหน่งของจุดนี้',
   emptySub = 'ถ้ามีรูป ช่วยส่งเข้ามาได้ที่กล่องด้านล่าง',
+  locale = 'th',
 }: {
   images: GalleryImage[]
   code: string
   nameTh: string | null
   emptyTitle?: string
   emptySub?: string
+  locale?: Locale
 }) {
   const [active, setActive] = useState(0)
+  const [showMarks, setShowMarks] = useState(true)
 
   if (images.length === 0) {
     return (
@@ -44,13 +51,30 @@ export default function PointGallery({
 
   return (
     <figure className="card overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={current.image_url}
-        alt={current.caption || `ตำแหน่งจุด ${code} ${nameTh ?? ''}`}
-        className="w-full object-cover"
-        loading="lazy"
-      />
+      <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={current.image_url}
+          alt={current.caption || `ตำแหน่งจุด ${code} ${nameTh ?? ''}`}
+          className="block w-full object-cover"
+          loading="lazy"
+        />
+        {current.annotations && showMarks && <AnnotationOverlay {...current.annotations} />}
+      </div>
+
+      {/* ซ่อนป้ายได้ เพื่อดูตรงจุดจริงที่ป้ายบังอยู่ — ปุ่มอยู่ใต้รูปเพราะวางทับแล้วบังป้ายเอง */}
+      {current.annotations && (
+        <div className="flex justify-end px-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowMarks((v) => !v)}
+            className="chip hover:border-primary hover:text-primary"
+          >
+            {showMarks ? <EyeOff size={12} /> : <Eye size={12} />}{' '}
+            {showMarks ? t(locale).annotate.hide : t(locale).annotate.show}
+          </button>
+        </div>
+      )}
 
       {images.length > 1 && (
         <div className="flex gap-2 p-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

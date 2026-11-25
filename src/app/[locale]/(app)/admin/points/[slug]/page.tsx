@@ -73,7 +73,12 @@ export default async function AdminPointPage({
         source={point.verified_source}
         locale={locale}
       />
-      <PointGalleryManager pointId={point.id} slug={point.slug} locale={locale} />
+      <PointGalleryManager
+        pointId={point.id}
+        slug={point.slug}
+        code={point.code}
+        locale={locale}
+      />
       <PointEditor point={point as Point} locale={locale} />
     </main>
   )

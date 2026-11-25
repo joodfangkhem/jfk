@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ImagePlus, Star, Trash2 } from 'lucide-react'
+import { ImagePlus, MapPinPlus, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AnnotationEditor from '@/components/AnnotationEditor'
+import { parseAnnotations, type Annotations } from '@/lib/annotations'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImage } from '@/lib/resizeImage'
 import { revalidatePoint } from '@/lib/revalidate'
@@ -15,6 +17,7 @@ type Img = {
   caption: string | null
   credit: string | null
   is_primary: boolean
+  annotations: Annotations | null
 }
 
 const MAX = 6
@@ -23,26 +26,29 @@ const MAX = 6
 export default function PointGalleryManager({
   pointId,
   slug,
+  code,
   locale = 'th',
 }: {
   pointId: string
   slug: string
+  code: string
   locale?: Locale
 }) {
   const d = t(locale).gallery
   const [supabase] = useState(() => createClient())
   const [images, setImages] = useState<Img[]>([])
   const [busy, setBusy] = useState(false)
+  const [marking, setMarking] = useState<Img | null>(null)
 
   const fetchImages = async () => {
     const { data } = await supabase
       .from('point_images')
-      .select('id, image_url, storage_path, caption, credit, is_primary')
+      .select('*')
       .eq('point_id', pointId)
       .order('is_primary', { ascending: false })
       .order('sort_order')
       .order('created_at')
-    return (data ?? []) as Img[]
+    return (data ?? []).map((r) => ({ ...r, annotations: parseAnnotations(r.annotations) })) as Img[]
   }
 
   const load = async () => setImages(await fetchImages())
@@ -124,6 +130,20 @@ export default function PointGalleryManager({
     else toast.success(d.removed)
   }
 
+  const saveMarks = async (id: string, annotations: Annotations | null) => {
+    setBusy(true)
+    const { error } = await supabase.from('point_images').update({ annotations }).eq('id', id)
+    if (!error) {
+      await load()
+      await revalidatePoint(slug)
+    }
+    setBusy(false)
+    // บันทึกไม่ผ่าน = เปิดตัวแก้ค้างไว้ ป้ายที่เพิ่งวางจะได้ไม่หาย
+    if (error) return toast.error(error.message)
+    setMarking(null)
+    toast.success(t(locale).annotate.saved)
+  }
+
   const saveText = async (id: string, caption: string, credit: string) => {
     setBusy(true)
     const { error } = await supabase
@@ -159,6 +179,7 @@ export default function PointGalleryManager({
             busy={busy}
             onPrimary={() => setPrimary(img.id)}
             onRemove={() => remove(img)}
+            onMark={() => setMarking(img)}
             onSave={(c, cr) => saveText(img.id, c, cr)}
             locale={locale}
           />
@@ -184,6 +205,19 @@ export default function PointGalleryManager({
       )}
 
       <p className="text-xs text-muted leading-relaxed">{d.note}</p>
+
+      {marking && (
+        <AnnotationEditor
+          imageUrl={marking.image_url}
+          code={code}
+          value={marking.annotations}
+          busy={busy}
+          saveLabel={t(locale).annotate.save}
+          locale={locale}
+          onClose={() => setMarking(null)}
+          onSave={(v) => saveMarks(marking.id, v)}
+        />
+      )}
     </section>
   )
 }
@@ -193,6 +227,7 @@ function ImageRow({
   busy,
   onPrimary,
   onRemove,
+  onMark,
   onSave,
   locale,
 }: {
@@ -200,6 +235,7 @@ function ImageRow({
   busy: boolean
   onPrimary: () => void
   onRemove: () => void
+  onMark: () => void
   onSave: (caption: string, credit: string) => void
   locale: Locale
 }) {
@@ -231,6 +267,16 @@ function ImageRow({
               <Star size={11} /> {d.makePrimary}
             </button>
           )}
+          <button
+            onClick={onMark}
+            disabled={busy}
+            className="chip hover:border-primary hover:text-primary disabled:opacity-50"
+          >
+            <MapPinPlus size={11} />{' '}
+            {img.annotations
+              ? t(locale).annotate.editCount(img.annotations.items.length)
+              : t(locale).annotate.open}
+          </button>
         </div>
 
         <input

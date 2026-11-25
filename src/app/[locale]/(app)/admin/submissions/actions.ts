@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { parseAnnotations } from '@/lib/annotations'
+import { revalidatePoint } from '@/lib/revalidate'
 import { isLocale, type Locale } from '@/lib/i18n'
 
 /** path ที่ Next เห็นจริงหลัง proxy rewrite — ไทยก็มี prefix /th */
@@ -19,6 +21,8 @@ export async function approveSubmission(formData: FormData) {
   const storagePath = String(formData.get('storage_path') ?? '')
   const credit = String(formData.get('credit') ?? '').trim()
   const caption = String(formData.get('caption') ?? '').trim()
+  const slug = String(formData.get('slug') ?? '')
+  const annotations = parseAnnotations(formData.get('annotations'))
   if (!id || !pointId || !imageUrl) return
 
   const supabase = await createClient()
@@ -43,6 +47,7 @@ export async function approveSubmission(formData: FormData) {
       caption: caption || null,
       credit: credit || null,
       sort_order: existing,
+      ...(annotations && { annotations }),
     })
     .select('id')
     .single()
@@ -59,6 +64,8 @@ export async function approveSubmission(formData: FormData) {
     .update({ status: 'approved', reviewed_by: user.id, reviewed_at: new Date().toISOString() })
     .eq('id', id)
 
+  // หน้าจุดแคช 7 วัน ไม่สะกิดตรงนี้รูปที่เพิ่งอนุมัติจะยังไม่ขึ้นเว็บ
+  await revalidatePoint(slug)
   revalidatePath(routePath(formData, '/admin/submissions'))
   revalidatePath(routePath(formData, '/admin'))
 }
