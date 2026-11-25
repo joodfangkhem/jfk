@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import SearchBox from '@/components/SearchBox'
 import PointCard from '@/components/PointCard'
 import AdSlot from '@/components/AdSlot'
-import { getMeridians, searchPoints } from '@/lib/queries'
+import { getMeridians, getPrimaryThumbs, searchPoints } from '@/lib/queries'
 import { SPECIES_LABEL_I18N, isLocale, lp, t, type Locale } from '@/lib/i18n'
 import { altLanguages } from '@/lib/site'
 
@@ -46,9 +46,10 @@ export default async function PointsPage({
   const d = t(locale)
   const sp = await searchParams
   const q = sp.q ?? ''
-  const [points, meridians] = await Promise.all([
+  const [points, meridians, thumbs] = await Promise.all([
     searchPoints(q, { species: sp.species, meridian: sp.meridian, limit: 120 }),
     getMeridians(),
+    getPrimaryThumbs(),
   ])
 
   const buildHref = (patch: Partial<SP>) => {
@@ -112,9 +113,9 @@ export default async function PointsPage({
           </Link>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {points.map((p) => (
-            <PointCard key={p.id} point={p} locale={locale} />
+            <PointCard key={p.id} point={p} thumb={thumbs.get(p.id)} locale={locale} />
           ))}
         </div>
       )}

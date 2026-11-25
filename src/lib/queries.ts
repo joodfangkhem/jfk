@@ -1,4 +1,4 @@
-import { parseAnnotations } from '@/lib/annotations'
+import { parseAnnotations, type Annotations } from '@/lib/annotations'
 import { hasSupabase, supabasePublic } from '@/lib/supabase/public'
 import type {
   Article,
@@ -133,6 +133,23 @@ export async function getPointImages(pointId: string) {
     is_primary: r.is_primary as boolean,
     annotations: parseAnnotations(r.annotations),
   }))
+}
+
+export type PointThumb = { src: string; data: Annotations | null }
+
+/** รูปย่อของรูปหลักแต่ละจุด ใช้ในรายการค้นหา (ยังไม่มีไฟล์ย่อ = ใช้รูปเต็มไปก่อน) */
+export async function getPrimaryThumbs(): Promise<Map<string, PointThumb>> {
+  if (!hasSupabase) return new Map()
+  // '*' ด้วยเหตุผลเดียวกับ getPointImages: ยังไม่ได้รัน migration ก็ต้องไม่พัง
+  const { data } = await supabasePublic.from('point_images').select('*').eq('is_primary', true)
+  return new Map(
+    (data ?? []).map((r) => [
+      r.point_id as string,
+      r.thumb_url
+        ? { src: r.thumb_url as string, data: null }
+        : { src: r.image_url as string, data: parseAnnotations(r.annotations) },
+    ])
+  )
 }
 
 export async function getConditions(): Promise<Condition[]> {

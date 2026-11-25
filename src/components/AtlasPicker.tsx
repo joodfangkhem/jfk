@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Camera, ChevronRight, Crosshair, ExternalLink, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import { refreshThumb } from '@/lib/thumb'
 import { revalidateAtlas, revalidatePoint } from '@/lib/revalidate'
 import type { AtlasCapture } from '@/components/AtlasStage'
 import type { SpeciesModel } from '@/lib/types'
@@ -322,6 +323,9 @@ export default function AtlasPicker({
       }
       if (n === 0 && row) {
         await supabase.rpc('set_primary_point_image', { img_id: row.id })
+      }
+      if (row) {
+        await refreshThumb(supabase, { id: row.id, image_url: pub.publicUrl, annotations: null })
       }
       // หน้าจุดฝั่ง public แคชยาว ต้องสะกิดให้สร้างใหม่ ไม่งั้นรูปขึ้นก็ต่อเมื่อแคชหมดอายุ
       await revalidatePoint(selected.slug)

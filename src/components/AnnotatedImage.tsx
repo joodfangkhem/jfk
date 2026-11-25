@@ -1,5 +1,5 @@
 import AnnotationOverlay from '@/components/AnnotationOverlay'
-import { FULL, cropStyle, cropView, squareIn, type Annotations } from '@/lib/annotations'
+import { FULL, cropStyle, cropView, squareFor, type Annotations } from '@/lib/annotations'
 
 /** รูปหนึ่งใบพร้อมกรอบครอปและป้าย — ไม่มีครอปก็แสดงเต็มรูปตามสัดส่วนเดิม */
 export default function AnnotatedImage({
@@ -41,7 +41,7 @@ export default function AnnotatedImage({
   )
 }
 
-/** รูปย่อจัตุรัส ตัดจากกลางกรอบครอป ให้ตรงกับรูปใหญ่ */
+/** รูปย่อจัตุรัส ตัดจากในกรอบครอป จัดกลางที่จุดที่ชี้ไว้ */
 export function CroppedThumb({
   src,
   data,
@@ -51,7 +51,7 @@ export function CroppedThumb({
   data: Annotations | null
   className?: string
 }) {
-  if (!data?.crop) {
+  if (!data) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={src} alt="" className={`object-cover ${className}`} loading="lazy" />
@@ -65,7 +65,7 @@ export function CroppedThumb({
         alt=""
         loading="lazy"
         className="absolute max-w-none"
-        style={cropStyle(squareIn(data.crop, data.w, data.h))}
+        style={cropStyle(squareFor(data))}
       />
     </span>
   )

@@ -7,6 +7,7 @@ import AnnotationEditor from '@/components/AnnotationEditor'
 import { CroppedThumb } from '@/components/AnnotatedImage'
 import { parseAnnotations, visibleCount, type Annotations } from '@/lib/annotations'
 import { createClient } from '@/lib/supabase/client'
+import { refreshThumb, thumbPath } from '@/lib/thumb'
 import { resizeImage } from '@/lib/resizeImage'
 import { revalidatePoint } from '@/lib/revalidate'
 import { t, type Locale } from '@/lib/i18n'
@@ -19,6 +20,7 @@ type Img = {
   credit: string | null
   is_primary: boolean
   annotations: Annotations | null
+  thumb_url?: string | null
 }
 
 const MAX = 6
@@ -58,7 +60,19 @@ export default function PointGalleryManager({
     let alive = true
     ;(async () => {
       const rows = await fetchImages()
-      if (alive) setImages(rows)
+      if (!alive) return
+      setImages(rows)
+      // รูปที่มาก่อนระบบรูปย่อ หรือทำรูปย่อพลาดไว้ เปิดหน้านี้แล้วซ่อมให้เอง
+      // (thumb_url เป็น undefined = ยังไม่ได้รัน migration ไม่ต้องทำ)
+      const missing = rows.filter((r) => r.thumb_url === null)
+      for (const img of missing) {
+        if (!alive) return
+        await refreshThumb(supabase, img)
+      }
+      if (missing.length && alive) {
+        const fresh = await fetchImages()
+        if (alive) setImages(fresh)
+      }
     })()
     return () => {
       alive = false
@@ -101,6 +115,9 @@ export default function PointGalleryManager({
     if (images.length === 0 && row) {
       await supabase.rpc('set_primary_point_image', { img_id: row.id })
     }
+    if (row) {
+      await refreshThumb(supabase, { id: row.id, image_url: pub.publicUrl, annotations: null })
+    }
     await load()
     // หน้าจุดฝั่ง public แคชยาว ต้องสะกิดให้สร้างใหม่ทุกครั้งที่รูปเปลี่ยน
     await revalidatePoint(slug)
@@ -121,8 +138,9 @@ export default function PointGalleryManager({
   const remove = async (img: Img) => {
     setBusy(true)
     const { error } = await supabase.rpc('delete_point_image', { img_id: img.id })
-    if (!error && img.storage_path) {
-      await supabase.storage.from('point-images').remove([img.storage_path])
+    const files = [img.storage_path, thumbPath(img.thumb_url)].filter((f) => f !== null)
+    if (!error && files.length) {
+      await supabase.storage.from('point-images').remove(files)
     }
     await load()
     if (!error) await revalidatePoint(slug)
@@ -135,6 +153,9 @@ export default function PointGalleryManager({
     setBusy(true)
     const { error } = await supabase.from('point_images').update({ annotations }).eq('id', id)
     if (!error) {
+      // กรอบครอปหรือจุดที่ชี้เปลี่ยน รูปย่อต้องเปลี่ยนตาม
+      const img = images.find((i) => i.id === id)
+      if (img) await refreshThumb(supabase, { ...img, annotations })
       await load()
       await revalidatePoint(slug)
     }

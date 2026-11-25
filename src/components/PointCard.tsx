@@ -1,14 +1,18 @@
 import Link from 'next/link'
+import { CroppedThumb } from '@/components/AnnotatedImage'
+import type { PointThumb } from '@/lib/queries'
 import type { Point } from '@/lib/types'
 import { lp, pick, pickArr, type Locale } from '@/lib/i18n'
 
 export default function PointCard({
   point,
   note,
+  thumb,
   locale = 'th',
 }: {
   point: Point
   note?: string | null
+  thumb?: PointThumb
   locale?: Locale
 }) {
   // เรียกจุดด้วย pinyin ทั้งสองภาษา (ไทยอ่านจาก name_th เพราะบางจุดมีวงเล็บหมายเหตุไทยต่อท้าย)
@@ -38,6 +42,13 @@ export default function PointCard({
             </div>
           )}
         </div>
+        {thumb && (
+          <CroppedThumb
+            src={thumb.src}
+            data={thumb.data}
+            className="w-16 h-16 shrink-0 rounded-lg border border-border"
+          />
+        )}
       </div>
     </Link>
   )

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Check, ImageOff, Inbox, X } from 'lucide-react'
+import ApproveForm from '@/components/ApproveForm'
 import AnnotateField from '@/components/AnnotateField'
 import { createClient } from '@/lib/supabase/server'
 import { approveSubmission, rejectSubmission } from './actions'
@@ -143,7 +144,7 @@ export default async function SubmissionsPage({
                 </div>
               </div>
 
-              <form action={approveSubmission} className="space-y-2">
+              <ApproveForm imageUrl={r.image_url} action={approveSubmission}>
                 <input type="hidden" name="id" value={r.id} />
                 <input type="hidden" name="point_id" value={r.point_id} />
                 <input type="hidden" name="slug" value={r.points?.slug ?? ''} />
@@ -168,7 +169,7 @@ export default async function SubmissionsPage({
                 >
                   <Check size={15} /> {d.approve}
                 </button>
-              </form>
+              </ApproveForm>
 
               <form action={rejectSubmission} className="flex gap-2">
                 <input type="hidden" name="id" value={r.id} />

@@ -55,6 +55,12 @@ export async function approveSubmission(formData: FormData) {
   // เต็ม 6 รูปแล้ว หรือ insert ไม่ผ่าน -> ปล่อยให้ค้างรออนุมัติไว้เหมือนเดิม
   if (error || !row) return
 
+  // แยกจาก insert: รูปย่อพลาดต้องไม่ทำให้อนุมัติไม่ผ่าน (DB บังคับว่าต้องอยู่ใน thumbs/)
+  const thumbUrl = String(formData.get('thumb_url') ?? '')
+  if (thumbUrl) {
+    await supabase.from('point_images').update({ thumb_url: thumbUrl }).eq('id', row.id)
+  }
+
   if (existing === 0) {
     await supabase.rpc('set_primary_point_image', { img_id: row.id })
   }

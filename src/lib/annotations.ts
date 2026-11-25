@@ -157,10 +157,22 @@ export function cropStyle(c: Crop) {
   }
 }
 
-/** จัตุรัส (หน่วยพิกเซล) ที่ใหญ่สุดกลางกรอบครอป */
-export function squareIn(c: Crop, w: number, h: number): Crop {
-  const side = Math.min(c.w * w, c.h * h)
-  const sw = side / w
-  const sh = side / h
-  return { x: c.x + (c.w - sw) / 2, y: c.y + (c.h - sh) / 2, w: sw, h: sh }
+/**
+ * จัตุรัส (หน่วยพิกเซล) ที่ใหญ่สุดในกรอบครอป สำหรับรูปย่อ
+ * จัดกลางที่จุดแรกที่ชี้ไว้ ไม่งั้นรูปแนวยาวจะตัดเอาตัวจุดทิ้งไป
+ */
+export function squareFor(a: Annotations): Crop {
+  const c = a.crop ?? FULL
+  const side = Math.min(c.w * a.w, c.h * a.h)
+  const sw = side / a.w
+  const sh = side / a.h
+  const focus = a.items.find((it) => it.type !== 'line' && inCrop(it, c))
+  const fx = focus ? (focus.x2 ?? focus.x) : c.x + c.w / 2
+  const fy = focus ? (focus.y2 ?? focus.y) : c.y + c.h / 2
+  return {
+    x: Math.min(c.x + c.w - sw, Math.max(c.x, fx - sw / 2)),
+    y: Math.min(c.y + c.h - sh, Math.max(c.y, fy - sh / 2)),
+    w: sw,
+    h: sh,
+  }
 }
