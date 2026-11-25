@@ -27,6 +27,18 @@ export type AtlasMarker = {
 /** รัศมีหมุดมาตรฐาน เทียบกับด้านที่ยาวที่สุดของโมเดล */
 const PIN_RADIUS = 0.006
 
+/**
+ * รัศมีต่ำสุดบนจอ (px) — หมุดเล็กลงได้มากตอนซูมเข้า แต่ซูมออกแล้วต้องไม่หายไป
+ */
+const MIN_PIN_PX = 1.5
+const MIN_SHAFT_PX = 0.6
+
+/** แตะพลาดหมุดได้ไม่เกินเท่านี้ (px) ยังนับว่าแตะหมุด — หมุดเล็กเกินปลายนิ้วมาก */
+const TAP_SLOP_PX = 14
+
+/** เข็มผอมลงตามหมุด แต่ไม่สั้นกว่านี้ ไม่งั้นอ่านมุมแทงไม่ออก */
+const MIN_NEEDLE_LEN = 0.5
+
 /** เลื่อนจุดหมุนออกจากกลางโมเดลได้ไกลสุดเท่าไร (เท่าของด้านที่ยาวที่สุด) */
 const PAN_LIMIT = 0.6
 
@@ -357,6 +369,23 @@ export default function AtlasStage({
     const ro = new ResizeObserver(resize)
     ro.observe(mount)
 
+    /** ขนาดจริงของหมุด/เข็ม แต่ไม่เล็กกว่าขั้นต่ำบนจอ ณ ระยะกล้องตอนนี้ */
+    const holdMinSize = () => {
+      const h = mount.clientHeight
+      if (!h) return
+      const perPx = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / h
+      for (const o of pins.children) {
+        const px = perPx * camera.position.distanceTo(o.position)
+        if (o.userData.radius) {
+          o.scale.setScalar(Math.max(o.userData.radius, MIN_PIN_PX * px))
+        } else if (o.userData.needle) {
+          const n = o.userData.needle as { thick: number; len: number }
+          const t = Math.max(n.thick, (MIN_SHAFT_PX * px) / NEEDLE.shaftRadius)
+          o.scale.set(t, n.len, t)
+        }
+      }
+    }
+
     /** กันเลื่อนภาพหลุดกรอบ — ขยับกล้องตามไปด้วยเพื่อให้แค่ "ชน" ขอบ ไม่ใช่ภาพกระตุก */
     const clampPan = () => {
       const t = controls.target
@@ -387,6 +416,7 @@ export default function AtlasStage({
       }
       controls.update()
       clampPan()
+      holdMinSize()
       renderer.render(scene, camera)
     })
 
@@ -395,6 +425,27 @@ export default function AtlasStage({
     const ndc = new THREE.Vector2()
     let down: { x: number; y: number } | null = null
     let lastTap = { t: 0, x: 0, y: 0 }
+
+    /** หมุดที่มองเห็นซึ่งใกล้นิ้วที่สุดในระยะเผื่อ (หมุดอีกฝั่งลำตัวไม่นับ) */
+    const nearestPin = (x: number, y: number, r: DOMRect) => {
+      let best: THREE.Object3D | null = null
+      let bestD = TAP_SLOP_PX
+      const v = new THREE.Vector3()
+      for (const o of pins.children) {
+        if (!o.userData.radius) continue
+        v.copy(o.position).project(camera)
+        if (v.z > 1) continue
+        const d = Math.hypot(((v.x + 1) / 2) * r.width - x, ((1 - v.y) / 2) * r.height - y)
+        if (d >= bestD) continue
+        const dist = camera.position.distanceTo(o.position)
+        ray.set(camera.position, v.copy(o.position).sub(camera.position).normalize())
+        const block = ray.intersectObjects(bodyRef.current, true)[0]
+        if (block && block.distance < dist - sizeRef.current * PIN_RADIUS) continue
+        best = o
+        bestD = d
+      }
+      return best
+    }
 
     /** หาจุดบนฉากที่อยู่ใต้ตำแหน่งนิ้ว/เมาส์ */
     const hitAt = (clientX: number, clientY: number) => {
@@ -405,6 +456,9 @@ export default function AtlasStage({
       const onPin = ray.intersectObjects(pins.children, true)[0]
       if (onPin) return { kind: 'pin' as const, hit: onPin }
       const onBody = ray.intersectObjects(bodyRef.current, true)[0]
+      // โหมดปักต้องได้ตำแหน่งตรงที่คลิกเป๊ะ จึงไม่เผื่อระยะให้
+      const near = pickModeRef.current ? null : nearestPin(clientX - r.left, clientY - r.top, r)
+      if (near) return { kind: 'pin' as const, hit: { object: near, point: near.position } }
       if (onBody) return { kind: 'body' as const, hit: onBody }
       return null
     }
@@ -548,6 +602,7 @@ export default function AtlasStage({
         pin.position.copy(at)
         pin.renderOrder = isSel ? 2 : 1
         pin.userData.pointId = mk.id
+        pin.userData.radius = r
         pins.add(pin)
 
         // เข็มขึ้นเฉพาะจุดที่เลือก — ถ้าขึ้นทุกจุดพร้อมกัน สามร้อยกว่าเล่มจะรกจนอ่านไม่ออก
@@ -562,7 +617,10 @@ export default function AtlasStage({
         const needle = new THREE.Group()
         needle.position.copy(at)
         needle.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward)
-        needle.scale.setScalar(sizeRef.current * (mk.scale ?? 1))
+        const thick = sizeRef.current * (mk.scale ?? 1)
+        const len = sizeRef.current * Math.max(mk.scale ?? 1, MIN_NEEDLE_LEN)
+        needle.scale.set(thick, len, thick)
+        needle.userData.needle = { thick, len }
         const shaft = new THREE.Mesh(needleGeo.shaft, mats.steel)
         const handle = new THREE.Mesh(needleGeo.handle, mats.selected)
         // เข็มเป็นภาพประกอบล้วน ๆ ต้องไม่กินคลิก ไม่งั้นมันบังตัวสัตว์ที่อยู่ข้างหลัง

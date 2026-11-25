@@ -43,6 +43,10 @@ export type PickerCoord = {
 
 const key = (pointId: string, species: string) => `${pointId}|${species}`
 
+/** ขนาดหมุดตอนปักใหม่ และค่าที่ปุ่ม 'ค่ามาตรฐาน' คืนให้ */
+const DEFAULT_SIZE = 0.5
+const MIN_SIZE = 0.1
+
 export default function AtlasPicker({
   models,
   points,
@@ -192,7 +196,7 @@ export default function AtlasPicker({
         y: p.y,
         z: p.z,
         bilateral: prev?.bilateral ?? true,
-        size_scale: prev?.size_scale ?? 1,
+        size_scale: prev?.size_scale ?? DEFAULT_SIZE,
         note_th: prev?.note_th ?? null,
         // คนที่คลิกปักคือสัตวแพทย์เจ้าของเว็บอยู่แล้ว การปักจึงนับเป็นการยืนยันในตัว
         // ถ้ายังไม่มั่นใจค่อยติ๊กออกเอง และการย้ายตำแหน่งไม่รีเซ็ตสถานะเดิม
@@ -468,9 +472,8 @@ export default function AtlasPicker({
                   <input
                     id="atlas-size"
                     type="range"
-                    // ต่ำกว่า 0.5 หมุดเล็กจนหายไปตอนซูมออก (ลองแล้ว 0.3 มองไม่เห็น)
-                    // ฐานข้อมูลยอมถึง 0.3 ไว้เป็นกันชน แต่สไลเดอร์ไม่ให้ลงไปถึง
-                    min={0.5}
+                    // เล็กสุดเท่าที่ฐานข้อมูลยอม — ซูมออกแล้วไม่หาย เพราะฉากคุมขนาดขั้นต่ำบนจอไว้
+                    min={MIN_SIZE}
                     max={3}
                     step={0.05}
                     value={selectedCoord.size_scale}
@@ -487,8 +490,8 @@ export default function AtlasPicker({
                   </span>
                   <button
                     type="button"
-                    onClick={() => void patch({ size_scale: 1 })}
-                    disabled={busy || selectedCoord.size_scale === 1}
+                    onClick={() => void patch({ size_scale: DEFAULT_SIZE })}
+                    disabled={busy || selectedCoord.size_scale === DEFAULT_SIZE}
                     className="chip hover:border-primary hover:text-primary"
                   >
                     ค่ามาตรฐาน
