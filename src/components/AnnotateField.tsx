@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { MapPinPlus } from 'lucide-react'
 import AnnotationEditor from '@/components/AnnotationEditor'
-import AnnotationOverlay from '@/components/AnnotationOverlay'
-import type { Annotations } from '@/lib/annotations'
+import AnnotatedImage from '@/components/AnnotatedImage'
+import { visibleCount, type Annotations } from '@/lib/annotations'
 import { t, type Locale } from '@/lib/i18n'
 
 /** ชี้จุดบนรูปที่รออนุมัติ — ค่าติดไปกับฟอร์มอนุมัติผ่าน hidden input */
@@ -26,11 +26,13 @@ export default function AnnotateField({
       <input type="hidden" name="annotations" value={value ? JSON.stringify(value) : ''} />
 
       {value && (
-        <div className="relative w-fit overflow-hidden rounded-xl border border-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="block max-w-full max-h-80" />
-          <AnnotationOverlay {...value} />
-        </div>
+        <AnnotatedImage
+          src={imageUrl}
+          alt=""
+          data={value}
+          maxHeight="20rem"
+          className="rounded-xl border border-border"
+        />
       )}
 
       <button
@@ -38,7 +40,7 @@ export default function AnnotateField({
         onClick={() => setOpen(true)}
         className="h-10 px-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary-soft text-primary text-sm font-medium active:scale-95 transition"
       >
-        <MapPinPlus size={15} /> {value ? d.editCount(value.items.length) : d.open}
+        <MapPinPlus size={15} /> {value ? d.editCount(visibleCount(value)) : d.open}
       </button>
 
       {open && (

@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { Camera, Eye, EyeOff } from 'lucide-react'
-import AnnotationOverlay from '@/components/AnnotationOverlay'
-import type { Annotations } from '@/lib/annotations'
+import AnnotatedImage, { CroppedThumb } from '@/components/AnnotatedImage'
+import { visibleCount, type Annotations } from '@/lib/annotations'
 import { t, type Locale } from '@/lib/i18n'
 
 export type GalleryImage = {
@@ -48,22 +48,19 @@ export default function PointGallery({
   }
 
   const current = images[Math.min(active, images.length - 1)]
+  const alt = current.caption || `ตำแหน่งจุด ${code} ${nameTh ?? ''}`
 
   return (
     <figure className="card overflow-hidden">
-      <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={current.image_url}
-          alt={current.caption || `ตำแหน่งจุด ${code} ${nameTh ?? ''}`}
-          className="block w-full object-cover"
-          loading="lazy"
-        />
-        {current.annotations && showMarks && <AnnotationOverlay {...current.annotations} />}
-      </div>
+      {current.annotations ? (
+        <AnnotatedImage src={current.image_url} alt={alt} data={current.annotations} showMarks={showMarks} />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={current.image_url} alt={alt} className="w-full object-cover" loading="lazy" />
+      )}
 
       {/* ซ่อนป้ายได้ เพื่อดูตรงจุดจริงที่ป้ายบังอยู่ — ปุ่มอยู่ใต้รูปเพราะวางทับแล้วบังป้ายเอง */}
-      {current.annotations && (
+      {visibleCount(current.annotations) > 0 && (
         <div className="flex justify-end px-2 pt-2">
           <button
             type="button"
@@ -87,8 +84,7 @@ export default function PointGallery({
                 i === active ? 'border-primary' : 'border-transparent opacity-70'
               }`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.image_url} alt="" className="w-16 h-16 object-cover" loading="lazy" />
+              <CroppedThumb src={img.image_url} data={img.annotations} className="w-16 h-16" />
             </button>
           ))}
         </div>

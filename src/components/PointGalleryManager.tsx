@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { ImagePlus, MapPinPlus, Star, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import AnnotationEditor from '@/components/AnnotationEditor'
-import { parseAnnotations, type Annotations } from '@/lib/annotations'
+import { CroppedThumb } from '@/components/AnnotatedImage'
+import { parseAnnotations, visibleCount, type Annotations } from '@/lib/annotations'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImage } from '@/lib/resizeImage'
 import { revalidatePoint } from '@/lib/revalidate'
@@ -246,11 +247,10 @@ function ImageRow({
 
   return (
     <div className="flex gap-3 items-start border border-border rounded-xl p-2.5">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <CroppedThumb
         src={img.image_url}
-        alt=""
-        className="w-24 h-24 object-cover rounded-lg border border-border shrink-0"
+        data={img.annotations}
+        className="w-24 h-24 rounded-lg border border-border shrink-0"
       />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-center gap-2 flex-wrap">
@@ -274,7 +274,7 @@ function ImageRow({
           >
             <MapPinPlus size={11} />{' '}
             {img.annotations
-              ? t(locale).annotate.editCount(img.annotations.items.length)
+              ? t(locale).annotate.editCount(visibleCount(img.annotations))
               : t(locale).annotate.open}
           </button>
         </div>

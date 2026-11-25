@@ -49,7 +49,8 @@ export default function AnnotationOverlay({
 }: {
   w: number
   h: number
-  items: AnnotationItem[]
+  /** null = หลุดกรอบครอป ข้ามไปแต่คงลำดับไว้ให้ data-hit อ้างอิงได้ */
+  items: (AnnotationItem | null)[]
   selected?: number
   hit?: boolean
 }) {
@@ -60,7 +61,7 @@ export default function AnnotationOverlay({
     <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
       <svg viewBox={`0 0 ${VW} ${vh}`} className="absolute inset-0 w-full h-full" aria-hidden>
         {items.map((it, i) => {
-          if (it.type === 'point') return null
+          if (!it || it.type === 'point') return null
           const c = ANNOTATION_COLORS[it.color]
           const x = it.x * VW
           const y = it.y * vh
@@ -143,8 +144,15 @@ export default function AnnotationOverlay({
       </svg>
 
       {items.map((it, i) => {
+        if (!it) return null
         const c = ANNOTATION_COLORS[it.color]
-        const spot = labelSpot(it, ratio)
+        const raw = labelSpot(it, ratio)
+        // โคนลูกศร/ปลายเส้นอาจอยู่นอกกรอบครอป ป้ายต้องค้างอยู่ในรูป
+        const spot = {
+          ...raw,
+          x: Math.min(1, Math.max(0, raw.x)),
+          y: Math.min(1, Math.max(0, raw.y)),
+        }
         return (
           <div key={i}>
             {it.type === 'point' && (

@@ -2,18 +2,23 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUpRight, Circle, Dot, Minus, Trash2, Undo2, X } from 'lucide-react'
+import { ArrowUpRight, Check, Circle, Crop as CropIcon, Dot, Minus, Trash2, Undo2, X } from 'lucide-react'
 import AnnotationOverlay from '@/components/AnnotationOverlay'
+import CropStage from '@/components/CropStage'
 import {
   ANNOTATION_COLORS,
+  FULL,
   MAX_ANNOTATIONS,
   MAX_LABEL,
+  cropStyle,
+  cropView,
   parseAnnotations,
   unit,
   type AnnotationColor,
   type AnnotationItem,
   type AnnotationType,
   type Annotations,
+  type Crop,
 } from '@/lib/annotations'
 import { t, type Locale } from '@/lib/i18n'
 
@@ -22,6 +27,14 @@ const TOOLS = [
   { type: 'circle', Icon: Circle },
   { type: 'arrow', Icon: ArrowUpRight },
   { type: 'line', Icon: Minus },
+] as const
+
+/** สัดส่วนกรอบครอป (พิกเซลจริง กว้าง/สูง) */
+const RATIOS = [
+  { label: null, value: null },
+  { label: '1:1', value: 1 },
+  { label: '4:3', value: 4 / 3 },
+  { label: '3:4', value: 3 / 4 },
 ] as const
 
 const LOUPE = 120
@@ -45,7 +58,7 @@ type Gesture = {
 }
 type Loupe = { x: number; y: number; w: number; h: number }
 
-/** ตัวแก้ป้ายแบบเต็มจอ: แตะวางจุด ลากวาดวง/ลูกศร/เส้น ลากของเดิมเพื่อย้าย */
+/** ตัวแก้ป้ายแบบเต็มจอ: แตะวางจุด ลากวาดวง/ลูกศร/เส้น ลากของเดิมเพื่อย้าย ครอปรูปได้ */
 export default function AnnotationEditor({
   imageUrl,
   code,
@@ -66,9 +79,15 @@ export default function AnnotationEditor({
   locale?: Locale
 }) {
   const d = t(locale).annotate
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null)
+  const [size, setSize] = useState<{ w: number; h: number } | null>(
+    value ? { w: value.w, h: value.h } : null
+  )
   const [items, setItems] = useState<AnnotationItem[]>(value?.items ?? [])
-  const [past, setPast] = useState<AnnotationItem[][]>([])
+  const [crop, setCrop] = useState<Crop>(value?.crop ?? FULL)
+  /** กรอบที่กำลังลากอยู่ในโหมดครอป (null = โหมดวางป้าย) */
+  const [draft, setDraft] = useState<Crop | null>(null)
+  const [ratio, setRatio] = useState<number | null>(null)
+  const [past, setPast] = useState<{ items: AnnotationItem[]; crop: Crop }[]>([])
   const [tool, setTool] = useState<AnnotationType>('point')
   const [color, setColor] = useState<AnnotationColor>('red')
   const [selected, setSelected] = useState(-1)
@@ -86,12 +105,14 @@ export default function AnnotationEditor({
     onClose()
   }
 
-  const push = (before: AnnotationItem[]) => setPast((p) => [...p.slice(-49), before])
+  const push = (before: AnnotationItem[]) => 
+    setPast((p) => [...p.slice(-49), { items: before, crop }])
 
   const undo = () => {
     const last = past[past.length - 1]
     if (!last) return
-    setItems(last)
+    setItems(last.items)
+    setCrop(last.crop)
     setPast(past.slice(0, -1))
     setSelected(-1)
   }
@@ -109,6 +130,36 @@ export default function AnnotationEditor({
     setItems(items.map((it, i) => (i === selected ? { ...it, ...p } : it)))
   }
 
+  const startCrop = () => {
+    setSelected(-1)
+    setRatio(null)
+    setDraft(crop)
+  }
+
+  /** ล็อกสัดส่วน: หดกรอบเดิมรอบจุดกลาง ไม่ขยายเกินที่เลือกไว้ */
+  const lockRatio = (r: number | null) => {
+    setRatio(r)
+    if (!r || !draft || !size) return
+    const k = (r * size.h) / size.w
+    const w = Math.min(draft.w, draft.h * k)
+    const h = w / k
+    setDraft({
+      x: unit(draft.x + (draft.w - w) / 2),
+      y: unit(draft.y + (draft.h - h) / 2),
+      w: unit(w),
+      h: unit(h),
+    })
+  }
+
+  const applyCrop = () => {
+    if (!draft) return
+    if (draft.x !== crop.x || draft.y !== crop.y || draft.w !== crop.w || draft.h !== crop.h) {
+      push(items)
+      setCrop(draft)
+    }
+    setDraft(null)
+  }
+
   // ล็อกหน้าหลังไม่ให้เลื่อนตามตอนลากบนมือถือ
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -122,7 +173,10 @@ export default function AnnotationEditor({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement | null)?.tagName === 'INPUT'
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') {
+        if (draft) setDraft(null)
+        else close()
+      } else if (draft) return
       else if (typing) return
       else if (e.key === 'Delete' || e.key === 'Backspace') removeSelected()
       else if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
@@ -136,11 +190,14 @@ export default function AnnotationEditor({
 
   const locate = (e: ReactPointerEvent) => {
     const r = stage.current!.getBoundingClientRect()
+    const u = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
+    const v = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))
+    // ทุกอย่างคิดในพิกัดรูปเต็ม จอเห็นแค่ส่วนในกรอบครอป
     return {
-      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
-      y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
-      w: r.width,
-      h: r.height,
+      x: crop.x + u * crop.w,
+      y: crop.y + v * crop.h,
+      w: r.width / crop.w,
+      h: r.height / crop.h,
     }
   }
 
@@ -211,6 +268,10 @@ export default function AnnotationEditor({
     showLoupe(g.orig, g.part, p.w, p.h)
   }
 
+  /** จำกัดให้อยู่ในกรอบครอป ไม่งั้นลากหลุดกรอบแล้วป้ายหายจับคืนไม่ได้ */
+  const cx = (v: number) => unit(Math.min(crop.x + crop.w, Math.max(crop.x, v)))
+  const cy = (v: number) => unit(Math.min(crop.y + crop.h, Math.max(crop.y, v)))
+
   const apply = (g: Gesture, x: number, y: number, w: number, h: number): AnnotationItem => {
     const o = g.orig
     const dx = x - g.startX
@@ -219,13 +280,13 @@ export default function AnnotationEditor({
       // รัศมีเทียบความกว้าง ต้องแปลงแกน y ให้เป็นหน่วยเดียวกันก่อน
       return { ...o, r: unit(Math.hypot(x - o.x, ((y - o.y) * h) / w)) }
     }
-    if (g.part === 'a') return { ...o, x: unit(o.x + dx), y: unit(o.y + dy) }
-    if (g.part === 'b') return { ...o, x2: unit(o.x2! + dx), y2: unit(o.y2! + dy) }
+    if (g.part === 'a') return { ...o, x: cx(o.x + dx), y: cy(o.y + dy) }
+    if (g.part === 'b') return { ...o, x2: cx(o.x2! + dx), y2: cy(o.y2! + dy) }
     // ย้ายทั้งชิ้น: จำกัดระยะก่อนบวก ปลายข้างหนึ่งชนขอบแล้วอีกข้างต้องหยุดด้วย ไม่งั้นทรงเพี้ยน
     const xs = o.x2 === undefined ? [o.x] : [o.x, o.x2]
     const ys = o.y2 === undefined ? [o.y] : [o.y, o.y2]
-    const mx = Math.max(-Math.min(...xs), Math.min(1 - Math.max(...xs), dx))
-    const my = Math.max(-Math.min(...ys), Math.min(1 - Math.max(...ys), dy))
+    const mx = Math.max(crop.x - Math.min(...xs), Math.min(crop.x + crop.w - Math.max(...xs), dx))
+    const my = Math.max(crop.y - Math.min(...ys), Math.min(crop.y + crop.h - Math.max(...ys), dy))
     return {
       ...o,
       x: unit(o.x + mx),
@@ -267,19 +328,20 @@ export default function AnnotationEditor({
     let done = g.moved ? apply(g, p.x, p.y, p.w, p.h) : g.orig
 
     if (g.fresh && done.type === 'circle' && (done.r ?? 0) * p.w < 8) {
-      done = { ...done, r: 0.06 } // แตะเฉย ๆ = วงขนาดมาตรฐาน ปรับทีหลังได้
+      done = { ...done, r: unit(0.06 * crop.w) } // แตะเฉย ๆ = วงขนาดมาตรฐาน ปรับทีหลังได้
     }
     if (g.fresh && (done.type === 'arrow' || done.type === 'line')) {
       const len = Math.hypot((done.x2! - done.x) * p.w, (done.y2! - done.y) * p.h)
       if (len < 10) {
         if (done.type === 'line') return revert()
+        const off = 0.14 * crop.w
         // แตะเฉย ๆ ด้วยลูกศร = ปลายอยู่ตรงที่แตะ โคนเยื้องไปด้านที่มีที่ว่าง
         done = {
           ...done,
           x2: done.x,
           y2: done.y,
-          x: unit(done.x + (done.x < 0.5 ? 0.14 : -0.14)),
-          y: unit(done.y + ((done.y < 0.5 ? 0.14 : -0.14) * p.w) / p.h),
+          x: cx(done.x + (done.x < crop.x + crop.w / 2 ? off : -off)),
+          y: cy(done.y + ((done.y < crop.y + crop.h / 2 ? off : -off) * p.w) / p.h),
         }
       }
     }
@@ -293,8 +355,11 @@ export default function AnnotationEditor({
 
   const save = () => {
     if (!size) return
-    onSave(parseAnnotations({ ...size, items }))
+    onSave(parseAnnotations({ ...size, items, crop }))
   }
+
+  const view = size ? cropView({ ...size, items, crop }) : null
+  const stageRatio = view ? view.w / view.h : 1
 
   return createPortal(
     <div
@@ -318,7 +383,7 @@ export default function AnnotationEditor({
         <button
           type="button"
           onClick={undo}
-          disabled={!past.length || busy}
+          disabled={!past.length || busy || !!draft}
           aria-label={d.undo}
           className="w-10 h-10 inline-flex items-center justify-center rounded-full hover:bg-white/10 disabled:opacity-30"
         >
@@ -326,8 +391,19 @@ export default function AnnotationEditor({
         </button>
         <button
           type="button"
+          onClick={startCrop}
+          disabled={busy || !size || !!draft}
+          aria-label={d.crop}
+          className={`h-10 px-3 inline-flex items-center gap-1.5 rounded-full text-sm hover:bg-white/10 disabled:opacity-30 ${
+            crop.w < 1 || crop.h < 1 ? 'bg-white/15' : ''
+          }`}
+        >
+          <CropIcon size={17} /> <span className="hidden sm:inline">{d.crop}</span>
+        </button>
+        <button
+          type="button"
           onClick={save}
-          disabled={busy || !size}
+          disabled={busy || !size || !!draft}
           className="h-10 px-4 rounded-full bg-primary text-sm font-medium active:scale-95 transition disabled:opacity-40"
         >
           {busy ? d.saving : saveLabel}
@@ -337,6 +413,14 @@ export default function AnnotationEditor({
       <div className="flex-1 min-h-0 flex items-center justify-center px-3 overflow-hidden">
         {failed ? (
           <p className="text-sm">{d.imageFailed}</p>
+        ) : draft && size ? (
+          <CropStage
+            src={imageUrl}
+            {...size}
+            value={draft}
+            k={ratio ? (ratio * size.h) / size.w : null}
+            onChange={setDraft}
+          />
         ) : (
           <div
             ref={stage}
@@ -345,7 +429,11 @@ export default function AnnotationEditor({
             onPointerMove={onMove}
             onPointerUp={(e) => finish(e, false)}
             onPointerCancel={(e) => finish(e, true)}
-            className="relative touch-none select-none cursor-crosshair"
+            className="relative touch-none select-none cursor-crosshair overflow-hidden rounded-lg"
+            style={{
+              aspectRatio: stageRatio,
+              width: `min(100%, calc((100dvh - 15rem) * ${stageRatio}))`,
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -356,9 +444,10 @@ export default function AnnotationEditor({
                 setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
               }
               onError={() => setFailed(true)}
-              className="block max-w-full max-h-[calc(100dvh-15rem)] rounded-lg"
+              className={`absolute max-w-none ${size ? '' : 'opacity-0'}`}
+              style={cropStyle(crop)}
             />
-            {size && <AnnotationOverlay {...size} items={items} selected={selected} hit />}
+            {view && <AnnotationOverlay {...view} selected={selected} hit />}
           </div>
         )}
       </div>
@@ -385,6 +474,53 @@ export default function AnnotationEditor({
       )}
 
       <div className="shrink-0 px-3 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-2.5 max-w-2xl w-full mx-auto">
+        {draft ? (
+          <>
+            <div className="flex gap-1.5">
+              {RATIOS.map((r) => (
+                <button
+                  key={r.label ?? 'free'}
+                  type="button"
+                  onClick={() => lockRatio(r.value)}
+                  aria-pressed={ratio === r.value}
+                  className={`flex-1 h-11 rounded-xl text-xs font-medium border transition ${
+                    ratio === r.value ? 'bg-white text-text border-white' : 'border-white/25 hover:bg-white/10'
+                  }`}
+                >
+                  {r.label ?? d.cropFree}
+                </button>
+              ))}
+            </div>
+            <div className="h-11 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRatio(null)
+                  setDraft(FULL)
+                }}
+                className="h-11 px-4 rounded-xl border border-white/25 text-sm hover:bg-white/10"
+              >
+                {d.cropReset}
+              </button>
+              <span className="flex-1" />
+              <button
+                type="button"
+                onClick={() => setDraft(null)}
+                className="h-11 px-4 rounded-xl text-sm hover:bg-white/10"
+              >
+                {d.cropCancel}
+              </button>
+              <button
+                type="button"
+                onClick={applyCrop}
+                className="h-11 px-4 inline-flex items-center gap-1.5 rounded-xl bg-primary text-sm font-medium"
+              >
+                <Check size={16} /> {d.cropApply}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
         <div className="flex items-center gap-2">
           <div className="flex flex-1 gap-1.5">
             {TOOLS.map(({ type, Icon }) => (
@@ -451,6 +587,8 @@ export default function AnnotationEditor({
             </p>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>,
     document.body
