@@ -1,5 +1,6 @@
 import { defineCloudflareConfig } from '@opennextjs/cloudflare'
 import r2IncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache'
+import memoryQueue from '@opennextjs/cloudflare/overrides/queue/memory-queue'
 import { withRegionalCache } from '@opennextjs/cloudflare/overrides/incremental-cache/regional-cache'
 
 /**
@@ -17,6 +18,10 @@ export default defineCloudflareConfig({
   incrementalCache: withRegionalCache(r2IncrementalCache, {
     mode: 'long-lived',
   }),
+
+  // ต้องตั้งเอง: ค่าเริ่มต้นเป็นคิวเปล่าที่ throw ทิ้ง หน้าที่หมดอายุจะค้าง STALE ตลอดไป
+  // (ใช้ binding WORKER_SELF_REFERENCE ที่มีอยู่แล้ว)
+  queue: memoryQueue,
 
   // ตัดวงจรให้สั้นลง ถ้าหน้า ISR มีในแคชแล้วตอบได้เลย ไม่ต้องปลุก Next router เต็มตัว
   // สำคัญกับเพดาน CPU 10 ms ของ Workers แพ็กฟรี ต้องกลับเป็น false ถ้าวันหนึ่งเปิด PPR
